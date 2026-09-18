@@ -9,6 +9,8 @@ import com.knu.finance_tracer.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class TransactionService {
 
@@ -51,5 +53,36 @@ public class TransactionService {
                 .orElseThrow(() -> new IllegalArgumentException("Користувача не знайдено")));
 
         transactionRepository.save(transaction);
+    }
+
+    public List<Transaction> getTransactionsByUserId(Long userId) {
+        return transactionRepository.findAllByUserId(userId);
+    }
+
+    public Transaction getTransactionById(Long id) {
+        return transactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Транзакцію не знайдено"));
+    }
+
+    @Transactional
+    public void updateTransaction(Long id, TransactionCreateDto dto) {
+        Transaction transaction = getTransactionById(id);
+        transaction.setAmount(dto.getAmount());
+        transaction.setDateTime(dto.getDateTime());
+        transaction.setDescription(dto.getDescription());
+
+        transaction.setAccount(accountRepository.findById(dto.getAccountId()).orElseThrow());
+        transaction.setCategory(categoryRepository.findById(dto.getCategoryId()).orElseThrow());
+
+        if (dto.getReceiptFile() != null && !dto.getReceiptFile().isEmpty()) {
+            String newFileUrl = s3Service.uploadFile(dto.getReceiptFile());
+            transaction.setReceiptFileUrl(newFileUrl);
+        }
+
+        transactionRepository.save(transaction);
+    }
+
+    public void deleteTransactionById(Long id) {
+        transactionRepository.deleteById(id);
     }
 }
