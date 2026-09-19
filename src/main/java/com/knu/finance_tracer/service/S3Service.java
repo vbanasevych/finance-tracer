@@ -37,7 +37,6 @@ public class S3Service {
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
-            // Повертаємо публічне посилання на файл у бакеті
             return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, fileName);
         } catch (IOException e) {
             throw new RuntimeException("Помилка завантаження файлу в S3", e);
