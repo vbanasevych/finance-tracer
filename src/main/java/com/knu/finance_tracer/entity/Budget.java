@@ -23,8 +23,11 @@ public class Budget {
     @Column(name = "limit_amount", nullable = false)
     private BigDecimal limitAmount;
 
-    @Column(nullable = false)
-    private LocalDate month;
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+
+    @Column(name = "end_date", nullable = false)
+    private LocalDate endDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)

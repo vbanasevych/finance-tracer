@@ -1,6 +1,8 @@
 package com.knu.finance_tracer.service;
 
 import com.knu.finance_tracer.dto.TransactionCreateDto;
+import com.knu.finance_tracer.entity.Account;
+import com.knu.finance_tracer.entity.Category;
 import com.knu.finance_tracer.entity.Transaction;
 import com.knu.finance_tracer.repository.AccountRepository;
 import com.knu.finance_tracer.repository.CategoryRepository;
@@ -9,6 +11,7 @@ import com.knu.finance_tracer.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -32,8 +35,23 @@ public class TransactionService {
         this.s3Service = s3Service;
     }
 
+    private void updateAccountBalance(Account account, Category category, BigDecimal amount, boolean isRevert) {
+        BigDecimal adjustment = category.getIsExpense() ? amount.negate() : amount;
+
+        if (isRevert) {
+            adjustment = adjustment.negate();
+        }
+
+        account.setBalance(account.getBalance().add(adjustment));
+        accountRepository.save(account);
+    }
+
     @Transactional
     public void createTransaction(TransactionCreateDto dto) {
+        if (dto.getDateTime().isAfter(java.time.LocalDateTime.now())) {
+            throw new IllegalArgumentException("Дата транзакції не може бути у майбутньому");
+        }
+
         Transaction transaction = new Transaction();
         transaction.setAmount(dto.getAmount());
         transaction.setDateTime(dto.getDateTime());
@@ -42,13 +60,16 @@ public class TransactionService {
         String fileUrl = s3Service.uploadFile(dto.getReceiptFile());
         transaction.setReceiptFileUrl(fileUrl);
 
-        // для тесту взято існуючі записи
-        transaction.setAccount(accountRepository.findById(dto.getAccountId())
-                .orElseThrow(() -> new IllegalArgumentException("Рахунок не знайдено")));
-        transaction.setCategory(categoryRepository.findById(dto.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("Категорію не знайдено")));
+        Account account = accountRepository.findById(dto.getAccountId())
+                .orElseThrow(() -> new IllegalArgumentException("Рахунок не знайдено"));
+        Category category = categoryRepository.findById(dto.getCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("Категорію не знайдено"));
 
-        // тимчасовий хардкод користувача до впровадження Spring Security
+        transaction.setAccount(account);
+        transaction.setCategory(category);
+
+        updateAccountBalance(account, category, dto.getAmount(), false);
+
         transaction.setUser(userRepository.findById(1L)
                 .orElseThrow(() -> new IllegalArgumentException("Користувача не знайдено")));
 
@@ -66,13 +87,25 @@ public class TransactionService {
 
     @Transactional
     public void updateTransaction(Long id, TransactionCreateDto dto) {
+        if (dto.getDateTime().isAfter(java.time.LocalDateTime.now())) {
+            throw new IllegalArgumentException("Дата транзакції не може бути у майбутньому");
+        }
+
         Transaction transaction = getTransactionById(id);
+
+        updateAccountBalance(transaction.getAccount(), transaction.getCategory(), transaction.getAmount(), true);
+
         transaction.setAmount(dto.getAmount());
         transaction.setDateTime(dto.getDateTime());
         transaction.setDescription(dto.getDescription());
 
-        transaction.setAccount(accountRepository.findById(dto.getAccountId()).orElseThrow());
-        transaction.setCategory(categoryRepository.findById(dto.getCategoryId()).orElseThrow());
+        Account newAccount = accountRepository.findById(dto.getAccountId()).orElseThrow();
+        Category newCategory = categoryRepository.findById(dto.getCategoryId()).orElseThrow();
+
+        transaction.setAccount(newAccount);
+        transaction.setCategory(newCategory);
+
+        updateAccountBalance(newAccount, newCategory, dto.getAmount(), false);
 
         if (dto.getReceiptFile() != null && !dto.getReceiptFile().isEmpty()) {
             String newFileUrl = s3Service.uploadFile(dto.getReceiptFile());
@@ -82,7 +115,10 @@ public class TransactionService {
         transactionRepository.save(transaction);
     }
 
+    @Transactional
     public void deleteTransactionById(Long id) {
+        Transaction transaction = getTransactionById(id);
+        updateAccountBalance(transaction.getAccount(), transaction.getCategory(), transaction.getAmount(), true);
         transactionRepository.deleteById(id);
     }
 }

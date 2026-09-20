@@ -50,7 +50,7 @@ class AccountServiceTest {
 
     @Test
     void getAccountsByUserId_ShouldReturnList() {
-        when(accountRepository.findAllByUserId(1L)).thenReturn(List.of(new Account()));
+        when(accountRepository.findAllByUserIdAndIsDeletedFalse(1L)).thenReturn(List.of(new Account()));
         assertEquals(1, accountService.getAccountsByUserId(1L).size());
     }
 
@@ -74,7 +74,13 @@ class AccountServiceTest {
 
     @Test
     void deleteAccount_Success() {
+        Account account = new Account();
+        account.setIsDeleted(false);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
+
         accountService.deleteAccount(1L);
-        verify(accountRepository).deleteById(1L);
+
+        assertTrue(account.getIsDeleted());
+        verify(accountRepository).save(account);
     }
 }

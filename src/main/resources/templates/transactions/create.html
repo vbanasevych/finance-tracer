@@ -29,7 +29,7 @@
         <h3 class="mb-4">Додати витрату</h3>
 
         <div th:if="${param.success}" class="alert alert-success">
-            Транзакція успішно збережена з чеком!
+            Транзакція успішно збережена!
         </div>
 
         <form th:action="@{/transactions}" th:object="${transaction}" method="post" enctype="multipart/form-data">
@@ -40,7 +40,7 @@
 
             <div class="mb-3">
                 <label class="form-label">Дата та час</label>
-                <input type="datetime-local" class="form-control" th:field="*{dateTime}" required>
+                <input type="datetime-local" class="form-control" th:field="*{dateTime}" id="dateTime" required>
             </div>
 
             <div class="mb-3">
@@ -73,6 +73,10 @@
 </div>
 
 <script>
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('dateTime').max = now.toISOString().slice(0, 16);
+
     document.getElementById('receiptImage').addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {

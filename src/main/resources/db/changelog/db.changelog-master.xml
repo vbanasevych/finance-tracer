@@ -7,5 +7,7 @@
 
     <include file="db/changelog/changesets/001-create-schema.sql"/>
     <include file="db/changelog/changesets/002-init-data.sql"/>
+    <include file="db/changelog/changesets/003-budget-period.sql"/>
+    <include file="db/changelog/changesets/004-soft-delete.sql"/>
 
 </databaseChangeLog>

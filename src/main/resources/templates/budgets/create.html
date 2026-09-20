@@ -29,9 +29,15 @@
                 <label>Сума ліміту</label>
                 <input type="number" step="0.01" class="form-control" th:field="*{limitAmount}" required>
             </div>
-            <div class="mb-3">
-                <label>Місяць (оберіть 1-ше число)</label>
-                <input type="date" class="form-control" th:field="*{month}" required>
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label">Дата початку</label>
+                    <input type="date" class="form-control" th:field="*{startDate}" required>
+                </div>
+                <div class="col">
+                    <label class="form-label">Дата завершення</label>
+                    <input type="date" class="form-control" th:field="*{endDate}" required>
+                </div>
             </div>
             <div class="mb-3">
                 <label>Категорія</label>

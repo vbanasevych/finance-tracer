@@ -26,6 +26,16 @@
         <h2>Транзакції</h2>
         <a href="/transactions/new" class="btn btn-primary">Додати витрату</a>
     </div>
+
+    <div th:if="${budgetWarnings != null and !budgetWarnings.isEmpty()}" class="alert alert-warning shadow-sm mb-4">
+        <h5 class="alert-heading fw-bold text-danger">
+            ⚠️ Увага: Перевищення бюджету!
+        </h5>
+        <ul class="mb-0 mt-2">
+            <li th:each="warning : ${budgetWarnings}" th:text="${warning}"></li>
+        </ul>
+    </div>
+
     <table class="table table-bordered bg-white">
         <thead class="table-dark">
         <tr>

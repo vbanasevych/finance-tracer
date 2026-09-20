@@ -44,7 +44,7 @@ class CategoryServiceTest {
 
     @Test
     void getCategoriesByUserId_Success() {
-        when(categoryRepository.findAllByUserId(1L)).thenReturn(List.of(new Category()));
+        when(categoryRepository.findAllByUserIdAndIsDeletedFalse(1L)).thenReturn(List.of(new Category()));
         assertEquals(1, categoryService.getCategoriesByUserId(1L).size());
     }
 
@@ -66,7 +66,13 @@ class CategoryServiceTest {
 
     @Test
     void deleteCategory_Success() {
+        Category category = new Category();
+        category.setIsDeleted(false);
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
+
         categoryService.deleteCategory(1L);
-        verify(categoryRepository).deleteById(1L);
+
+        assertTrue(category.getIsDeleted());
+        verify(categoryRepository).save(category);
     }
 }

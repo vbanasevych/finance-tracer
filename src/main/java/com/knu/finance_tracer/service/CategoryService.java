@@ -27,7 +27,7 @@ public class CategoryService {
     }
 
     public List<Category> getCategoriesByUserId(Long userId) {
-        return categoryRepository.findAllByUserId(userId);
+        return categoryRepository.findAllByUserIdAndIsDeletedFalse(userId);
     }
 
     @Transactional
@@ -40,6 +40,8 @@ public class CategoryService {
 
     @Transactional
     public void deleteCategory(Long id) {
-        categoryRepository.deleteById(id);
+        Category category = getCategoryById(id);
+        category.setIsDeleted(true);
+        categoryRepository.save(category);
     }
 }

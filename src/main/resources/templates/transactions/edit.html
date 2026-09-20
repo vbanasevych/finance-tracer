@@ -33,7 +33,7 @@
 
             <div class="mb-3">
                 <label class="form-label">Дата та час</label>
-                <input type="datetime-local" class="form-control" th:field="*{dateTime}" required>
+                <input type="datetime-local" class="form-control" th:field="*{dateTime}" id="dateTime" required>
             </div>
 
             <div class="mb-3">
@@ -77,6 +77,10 @@
 </div>
 
 <script>
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('dateTime').max = now.toISOString().slice(0, 16);
+
     document.getElementById('receiptImage').addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {

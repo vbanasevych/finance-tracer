@@ -28,13 +28,13 @@
     </div>
     <table class="table table-bordered bg-white">
         <thead class="table-dark">
-        <tr><th>Категорія</th><th>Ліміт</th><th>Місяць</th><th>Дії</th></tr>
+        <tr><th>Категорія</th><th>Ліміт</th><th>Період</th><th>Дії</th></tr>
         </thead>
         <tbody>
         <tr th:each="b : ${budgets}">
             <td th:text="${b.category.name}"></td>
             <td th:text="${b.limitAmount}"></td>
-            <td th:text="${b.month}"></td>
+            <td th:text="${b.startDate} + ' — ' + ${b.endDate}"></td>
             <td>
                 <div class="d-flex gap-2 align-items-center">
                     <a th:href="@{/budgets/edit/{id}(id=${b.id})}" class="btn btn-sm btn-warning">Редагувати</a>

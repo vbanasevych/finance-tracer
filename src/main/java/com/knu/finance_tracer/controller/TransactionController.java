@@ -4,11 +4,14 @@ import com.knu.finance_tracer.dto.TransactionCreateDto;
 import com.knu.finance_tracer.entity.Transaction;
 import com.knu.finance_tracer.repository.TransactionRepository;
 import com.knu.finance_tracer.service.AccountService;
+import com.knu.finance_tracer.service.BudgetService;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.TransactionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/transactions")
@@ -17,16 +20,25 @@ public class TransactionController {
     private final TransactionService transactionService;
     private final AccountService accountService;
     private final CategoryService categoryService;
+    private final BudgetService budgetService;
 
-    public TransactionController(TransactionService transactionService, AccountService accountService,  CategoryService categoryService) {
+    public TransactionController(TransactionService transactionService,
+                                 AccountService accountService,
+                                 CategoryService categoryService,
+                                 BudgetService budgetService) {
         this.transactionService = transactionService;
         this.accountService = accountService;
         this.categoryService = categoryService;
+        this.budgetService = budgetService;
     }
 
     @GetMapping
     public String listTransactions(Model model) {
-        model.addAttribute("transactions", transactionService.getTransactionsByUserId(1L));
+        List<Transaction> transactions = transactionService.getTransactionsByUserId(1L);
+        List<String> warnings = budgetService.getBudgetWarnings(1L, transactions);
+
+        model.addAttribute("transactions", transactions);
+        model.addAttribute("budgetWarnings", warnings);
         return "transactions/list";
     }
 

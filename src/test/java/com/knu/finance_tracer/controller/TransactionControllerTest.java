@@ -5,6 +5,7 @@ import com.knu.finance_tracer.entity.Account;
 import com.knu.finance_tracer.entity.Category;
 import com.knu.finance_tracer.entity.Transaction;
 import com.knu.finance_tracer.service.AccountService;
+import com.knu.finance_tracer.service.BudgetService;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.TransactionService;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,7 @@ class TransactionControllerTest {
     @Mock private AccountService accountService;
     @Mock private CategoryService categoryService;
     @Mock private Model model;
+    @Mock private BudgetService budgetService;
 
     @InjectMocks
     private TransactionController transactionController;
@@ -37,9 +39,13 @@ class TransactionControllerTest {
     @Test
     void listTransactions_ShouldReturnView() {
         when(transactionService.getTransactionsByUserId(1L)).thenReturn(List.of());
+        when(budgetService.getBudgetWarnings(eq(1L), anyList())).thenReturn(List.of("Warning 1"));
+
         String view = transactionController.listTransactions(model);
+
         assertEquals("transactions/list", view);
         verify(model).addAttribute(eq("transactions"), anyList());
+        verify(model).addAttribute(eq("budgetWarnings"), anyList());
     }
 
     @Test

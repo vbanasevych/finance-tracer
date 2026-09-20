@@ -27,7 +27,7 @@ public class AccountService {
     }
 
     public List<Account> getAccountsByUserId(Long userId) {
-        return accountRepository.findAllByUserId(userId);
+        return accountRepository.findAllByUserIdAndIsDeletedFalse(userId);
     }
 
     @Transactional
@@ -41,6 +41,8 @@ public class AccountService {
 
     @Transactional
     public void deleteAccount(Long id) {
-        accountRepository.deleteById(id);
+        Account account = getAccountById(id);
+        account.setIsDeleted(true);
+        accountRepository.save(account);
     }
 }
