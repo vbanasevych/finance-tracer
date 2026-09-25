@@ -41,7 +41,7 @@
         <tr><th>Назва</th><th>Тип</th><th>Дії</th></tr>
         </thead>
         <tbody>
-        <tr th:each="cat : ${categories}">
+        <tr th:each="cat : ${page.content}">
             <td th:text="${cat.name}"></td>
             <td th:text="${cat.isExpense ? 'Витрата' : 'Дохід'}"></td>
             <td>
@@ -56,7 +56,25 @@
         </tr>
         </tbody>
     </table>
-    <a href="/" class="btn btn-secondary">На головну</a>
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <a href="/" class="btn btn-secondary">На головну</a>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item" th:classappend="${page.first ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{''(page=${page.number - 1})}">Попередня</a>
+                </li>
+
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages > 0 ? page.totalPages - 1 : 0)}"
+                    th:classappend="${page.number == i ? 'active' : ''}">
+                    <a class="page-link" th:href="@{''(page=${i})}" th:text="${i + 1}"></a>
+                </li>
+
+                <li class="page-item" th:classappend="${page.last or page.totalPages == 0 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{''(page=${page.number + 1})}">Наступна</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </div>
 </body>
 </html>

@@ -2,6 +2,8 @@ package com.knu.finance_tracer.service;
 
 import com.knu.finance_tracer.entity.Account;
 import com.knu.finance_tracer.repository.AccountRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,10 @@ public class AccountService {
 
     public List<Account> getAccountsByUserId(Long userId) {
         return accountRepository.findAllByUserIdAndIsDeletedFalse(userId);
+    }
+
+    public Page<Account> getAccounts(Long userId, Pageable pageable) {
+        return accountRepository.findAllByUserIdAndIsDeletedFalse(userId, pageable);
     }
 
     @Transactional

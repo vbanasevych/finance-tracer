@@ -39,7 +39,7 @@
         <tr><th>Категорія</th><th>Ліміт</th><th>Період</th><th>Дії</th></tr>
         </thead>
         <tbody>
-        <tr th:each="b : ${budgets}">
+        <tr th:each="b : ${page.content}">
             <td th:text="${b.category.name}"></td>
             <td th:text="${b.limitAmount}"></td>
             <td th:text="${b.startDate} + ' — ' + ${b.endDate}"></td>
@@ -55,7 +55,25 @@
         </tr>
         </tbody>
     </table>
-    <a href="/" class="btn btn-secondary">На головну</a>
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <a href="/" class="btn btn-secondary">На головну</a>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item" th:classappend="${page.first ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{''(page=${page.number - 1})}">Попередня</a>
+                </li>
+
+                <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages > 0 ? page.totalPages - 1 : 0)}"
+                    th:classappend="${page.number == i ? 'active' : ''}">
+                    <a class="page-link" th:href="@{''(page=${i})}" th:text="${i + 1}"></a>
+                </li>
+
+                <li class="page-item" th:classappend="${page.last or page.totalPages == 0 ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{''(page=${page.number + 1})}">Наступна</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
 </div>
 </body>
 </html>

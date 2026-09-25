@@ -4,6 +4,8 @@ import com.knu.finance_tracer.entity.Category;
 import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.UserService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +24,11 @@ public class CategoryController {
     }
 
     @GetMapping
-    public String listCategories(Model model) {
-        model.addAttribute("categories", categoryService.getCategoriesByUserId(CURRENT_USER_ID));
+    public String listCategories(@RequestParam(defaultValue = "0") int page,
+                                 @RequestParam(defaultValue = "5") int size,
+                                 Model model) {
+        Pageable pageable = PageRequest.of(page, size);
+        model.addAttribute("page", categoryService.getCategories(CURRENT_USER_ID, pageable));
         return "categories/list";
     }
 
