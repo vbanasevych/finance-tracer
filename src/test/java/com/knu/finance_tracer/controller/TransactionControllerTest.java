@@ -38,13 +38,15 @@ class TransactionControllerTest {
 
     @Test
     void listTransactions_ShouldReturnView() {
+        org.springframework.data.domain.Page<Transaction> page = new org.springframework.data.domain.PageImpl<>(List.of());
+        when(transactionService.getTransactions(eq(1L), any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
         when(transactionService.getTransactionsByUserId(1L)).thenReturn(List.of());
-        when(budgetService.getBudgetWarnings(eq(1L), anyList())).thenReturn(List.of("Warning 1"));
+        when(budgetService.getBudgetWarnings(eq(1L), anyList())).thenReturn(List.of("Warning"));
 
-        String view = transactionController.listTransactions(model);
+        String view = transactionController.listTransactions(0, 5, model);
 
         assertEquals("transactions/list", view);
-        verify(model).addAttribute(eq("transactions"), anyList());
+        verify(model).addAttribute(eq("page"), any());
         verify(model).addAttribute(eq("budgetWarnings"), anyList());
     }
 

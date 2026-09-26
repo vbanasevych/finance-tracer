@@ -1,5 +1,6 @@
 package com.knu.finance_tracer.service;
 
+import com.knu.finance_tracer.entity.Account;
 import com.knu.finance_tracer.entity.Category;
 import com.knu.finance_tracer.repository.CategoryRepository;
 import org.junit.jupiter.api.Test;
@@ -7,6 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +51,14 @@ class CategoryServiceTest {
     void getCategoriesByUserId_Success() {
         when(categoryRepository.findAllByUserIdAndIsDeletedFalse(1L)).thenReturn(List.of(new Category()));
         assertEquals(1, categoryService.getCategoriesByUserId(1L).size());
+    }
+
+    @Test
+    void getCategories_WithPageable_Success() {
+        Page<Category> page = new PageImpl<>(List.of(new Category()));
+        when(categoryRepository.findAllByUserIdAndIsDeletedFalse(eq(1L), any(Pageable.class))).thenReturn(page);
+
+        assertEquals(1, categoryService.getCategories(1L, PageRequest.of(0, 5)).getContent().size());
     }
 
     @Test

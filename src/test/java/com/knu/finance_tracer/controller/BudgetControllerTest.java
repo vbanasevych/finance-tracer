@@ -1,5 +1,6 @@
 package com.knu.finance_tracer.controller;
 
+import com.knu.finance_tracer.entity.Account;
 import com.knu.finance_tracer.entity.Budget;
 import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.service.BudgetService;
@@ -10,6 +11,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.ui.Model;
 
 import java.util.List;
@@ -32,10 +36,11 @@ class BudgetControllerTest {
 
     @Test
     void listBudgets_ShouldReturnView() {
-        when(budgetService.getBudgetsByUserId(1L)).thenReturn(List.of(new Budget()));
-        String view = budgetController.listBudgets(model);
+        Page<Budget> page = new PageImpl<>(List.of(new Budget()));
+        when(budgetService.getBudgets(eq(1L), any(Pageable.class))).thenReturn(page);
+        String view = budgetController.listBudgets(0, 5, model);
         assertEquals("budgets/list", view);
-        verify(model).addAttribute(eq("budgets"), anyList());
+        verify(model).addAttribute(eq("page"), any());
     }
 
     @Test

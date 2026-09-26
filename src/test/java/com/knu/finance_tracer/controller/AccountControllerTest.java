@@ -9,6 +9,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.ui.Model;
 
 import java.util.List;
@@ -30,10 +33,11 @@ class AccountControllerTest {
 
     @Test
     void listAccounts_ShouldReturnViewAndModel() {
-        when(accountService.getAccountsByUserId(1L)).thenReturn(List.of(new Account()));
-        String view = accountController.listAccounts(model);
+        Page<Account> page = new PageImpl<>(List.of(new Account()));
+        when(accountService.getAccounts(eq(1L), any(Pageable.class))).thenReturn(page);
+        String view = accountController.listAccounts(0, 5, model);
         assertEquals("accounts/list", view);
-        verify(model).addAttribute(eq("accounts"), anyList());
+        verify(model).addAttribute(eq("page"), any());
     }
 
     @Test
