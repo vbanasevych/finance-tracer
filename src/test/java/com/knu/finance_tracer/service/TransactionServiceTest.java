@@ -14,6 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -212,5 +216,13 @@ class TransactionServiceTest {
     void getTransactionById_NotFound() {
         when(transactionRepository.findById(1L)).thenReturn(Optional.empty());
         assertThrows(IllegalArgumentException.class, () -> transactionService.getTransactionById(1L));
+    }
+
+    @Test
+    void getTransactions_WithPageable_Success() {
+        Page<Transaction> page = new PageImpl<>(List.of(new Transaction()));
+        when(transactionRepository.findAllByUserId(eq(1L), any(Pageable.class))).thenReturn(page);
+
+        assertEquals(1, transactionService.getTransactions(1L, PageRequest.of(0, 5)).getContent().size());
     }
 }

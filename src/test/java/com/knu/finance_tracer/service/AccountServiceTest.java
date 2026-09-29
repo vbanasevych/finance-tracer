@@ -7,6 +7,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -52,6 +56,14 @@ class AccountServiceTest {
     void getAccountsByUserId_ShouldReturnList() {
         when(accountRepository.findAllByUserIdAndIsDeletedFalse(1L)).thenReturn(List.of(new Account()));
         assertEquals(1, accountService.getAccountsByUserId(1L).size());
+    }
+
+    @Test
+    void getAccounts_WithPageable_Success() {
+        Page<Account> page = new PageImpl<>(List.of(new Account()));
+        when(accountRepository.findAllByUserIdAndIsDeletedFalse(eq(1L), any(Pageable.class))).thenReturn(page);
+
+        assertEquals(1, accountService.getAccounts(1L, PageRequest.of(0, 5)).getContent().size());
     }
 
     @Test

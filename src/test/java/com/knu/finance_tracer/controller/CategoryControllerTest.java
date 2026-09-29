@@ -1,5 +1,6 @@
 package com.knu.finance_tracer.controller;
 
+import com.knu.finance_tracer.entity.Account;
 import com.knu.finance_tracer.entity.Category;
 import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.service.CategoryService;
@@ -9,6 +10,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.ui.Model;
 
 import java.util.List;
@@ -30,10 +34,11 @@ class CategoryControllerTest {
 
     @Test
     void listCategories_ShouldReturnView() {
-        when(categoryService.getCategoriesByUserId(1L)).thenReturn(List.of(new Category()));
-        String view = categoryController.listCategories(model);
+        Page<Category> page = new PageImpl<>(List.of(new Category(), new Category()));
+        when(categoryService.getCategories(eq(1L), any(Pageable.class))).thenReturn(page);
+        String view = categoryController.listCategories(0, 5, model);
         assertEquals("categories/list", view);
-        verify(model).addAttribute(eq("categories"), anyList());
+        verify(model).addAttribute(eq("page"), any());
     }
 
     @Test

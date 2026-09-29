@@ -4,6 +4,8 @@ import com.knu.finance_tracer.entity.Account;
 import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.service.AccountService;
 import com.knu.finance_tracer.service.UserService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +24,11 @@ public class AccountController {
     }
 
     @GetMapping
-    public String listAccounts(Model model) {
-        model.addAttribute("accounts", accountService.getAccountsByUserId(CURRENT_USER_ID));
+    public String listAccounts(@RequestParam(defaultValue = "0") int page,
+                               @RequestParam(defaultValue = "5") int size,
+                               Model model) {
+        Pageable pageable = PageRequest.of(page, size);
+        model.addAttribute("page", accountService.getAccounts(CURRENT_USER_ID, pageable));
         return "accounts/list";
     }
 

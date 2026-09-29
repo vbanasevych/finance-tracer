@@ -7,6 +7,10 @@ import com.knu.finance_tracer.service.AccountService;
 import com.knu.finance_tracer.service.BudgetService;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.TransactionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -33,11 +37,18 @@ public class TransactionController {
     }
 
     @GetMapping
-    public String listTransactions(Model model) {
-        List<Transaction> transactions = transactionService.getTransactionsByUserId(1L);
-        List<String> warnings = budgetService.getBudgetWarnings(1L, transactions);
+    public String listTransactions(@RequestParam(defaultValue = "0") int page,
+                                   @RequestParam(defaultValue = "5") int size,
+                                   Model model) {
+        Pageable pageable = PageRequest.of(
+                page, size, Sort.by("dateTime").descending());
 
-        model.addAttribute("transactions", transactions);
+        Page<Transaction> transactionPage = transactionService.getTransactions(1L, pageable);
+
+        List<Transaction> allTransactions = transactionService.getTransactionsByUserId(1L);
+        List<String> warnings = budgetService.getBudgetWarnings(1L, allTransactions);
+
+        model.addAttribute("page", transactionPage);
         model.addAttribute("budgetWarnings", warnings);
         return "transactions/list";
     }

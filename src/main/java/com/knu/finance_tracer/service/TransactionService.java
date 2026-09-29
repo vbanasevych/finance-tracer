@@ -8,6 +8,8 @@ import com.knu.finance_tracer.repository.AccountRepository;
 import com.knu.finance_tracer.repository.CategoryRepository;
 import com.knu.finance_tracer.repository.TransactionRepository;
 import com.knu.finance_tracer.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,6 +85,10 @@ public class TransactionService {
     public Transaction getTransactionById(Long id) {
         return transactionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Транзакцію не знайдено"));
+    }
+
+    public Page<Transaction> getTransactions(Long userId, Pageable pageable) {
+        return transactionRepository.findAllByUserId(userId, pageable);
     }
 
     @Transactional

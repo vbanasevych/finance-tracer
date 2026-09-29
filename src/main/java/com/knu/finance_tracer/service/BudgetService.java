@@ -3,6 +3,8 @@ package com.knu.finance_tracer.service;
 import com.knu.finance_tracer.entity.Budget;
 import com.knu.finance_tracer.entity.Transaction;
 import com.knu.finance_tracer.repository.BudgetRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,10 @@ public class BudgetService {
 
     public List<Budget> getBudgetsByUserId(Long userId) {
         return budgetRepository.findAllByUserId(userId);
+    }
+
+    public Page<Budget> getBudgets(Long userId, Pageable pageable) {
+        return budgetRepository.findAllByUserId(userId, pageable);
     }
 
     @Transactional

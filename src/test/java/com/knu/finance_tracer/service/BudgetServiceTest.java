@@ -7,6 +7,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -57,6 +61,14 @@ class BudgetServiceTest {
     void getBudgetsByUserId_Success() {
         when(budgetRepository.findAllByUserId(1L)).thenReturn(List.of(new Budget()));
         assertEquals(1, budgetService.getBudgetsByUserId(1L).size());
+    }
+
+    @Test
+    void getBudgets_WithPageable_Success() {
+        Page<Budget> page = new PageImpl<>(List.of(new Budget()));
+        when(budgetRepository.findAllByUserId(eq(1L), any(Pageable.class))).thenReturn(page);
+
+        assertEquals(1, budgetService.getBudgets(1L, PageRequest.of(0, 5)).getContent().size());
     }
 
     @Test

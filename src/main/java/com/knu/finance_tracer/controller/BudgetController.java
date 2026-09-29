@@ -5,6 +5,8 @@ import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.service.BudgetService;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.UserService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +27,11 @@ public class BudgetController {
     }
 
     @GetMapping
-    public String listBudgets(Model model) {
-        model.addAttribute("budgets", budgetService.getBudgetsByUserId(CURRENT_USER_ID));
+    public String listBudgets(@RequestParam(defaultValue = "0") int page,
+                              @RequestParam(defaultValue = "5") int size,
+                              Model model) {
+        Pageable pageable = PageRequest.of(page, size);
+        model.addAttribute("page", budgetService.getBudgets(CURRENT_USER_ID, pageable));
         return "budgets/list";
     }
 
