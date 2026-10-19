@@ -1,6 +1,8 @@
 package com.knu.finance_tracer.api;
 
 import com.knu.finance_tracer.entity.Account;
+import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.AccountService;
 import com.knu.finance_tracer.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,12 +19,11 @@ import org.springframework.web.bind.annotation.*;
 public class AccountApiController {
 
     private final AccountService accountService;
-    private final UserService userService;
-    private final Long CURRENT_USER_ID = 1L;
+    private final SecurityUtil securityUtil;
 
-    public AccountApiController(AccountService accountService, UserService userService) {
+    public AccountApiController(AccountService accountService, SecurityUtil securityUtil) {
         this.accountService = accountService;
-        this.userService = userService;
+        this.securityUtil = securityUtil;
     }
 
     @Operation(summary = "Отримати сторінку рахунків", description = "Повертає рахунки з пагінацією (тільки активні)")
@@ -30,7 +31,8 @@ public class AccountApiController {
     public ResponseEntity<Page<Account>> getAccounts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        return ResponseEntity.ok(accountService.getAccounts(CURRENT_USER_ID, PageRequest.of(page, size)));
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        return ResponseEntity.ok(accountService.getAccounts(currentUser.getId(), PageRequest.of(page, size)));
     }
 
     @Operation(summary = "Отримати інформацію про конкретний рахунок", description = "Повертає один рахунок")
@@ -42,7 +44,7 @@ public class AccountApiController {
     @Operation(summary = "Створити новий рахунок")
     @PostMapping
     public ResponseEntity<Account> createAccount(@RequestBody Account account) {
-        account.setUser(userService.getUserById(CURRENT_USER_ID));
+        account.setUser(securityUtil.getCurrentAuthenticatedUser());
         Account created = accountService.createAccount(account);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

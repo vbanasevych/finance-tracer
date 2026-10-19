@@ -1,6 +1,8 @@
 package com.knu.finance_tracer.api;
 
 import com.knu.finance_tracer.entity.Budget;
+import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.BudgetService;
 import com.knu.finance_tracer.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,12 +19,11 @@ import org.springframework.web.bind.annotation.*;
 public class BudgetApiController {
 
     private final BudgetService budgetService;
-    private final UserService userService;
-    private final Long CURRENT_USER_ID = 1L;
+    private final SecurityUtil securityUtil;
 
-    public BudgetApiController(BudgetService budgetService, UserService userService) {
+    public BudgetApiController(BudgetService budgetService, SecurityUtil securityUtil) {
         this.budgetService = budgetService;
-        this.userService = userService;
+        this.securityUtil = securityUtil;
     }
 
     @Operation(summary = "Отримати сторінку лімітів", description = "Повертає ліміти з пагінацією")
@@ -30,7 +31,8 @@ public class BudgetApiController {
     public ResponseEntity<Page<Budget>> getBudgets(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        return ResponseEntity.ok(budgetService.getBudgets(CURRENT_USER_ID, PageRequest.of(page, size)));
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        return ResponseEntity.ok(budgetService.getBudgets(currentUser.getId(), PageRequest.of(page, size)));
     }
 
     @Operation(summary = "Отримати інформацію про конкретний ліміт", description = "Повертає один ліміт")
@@ -42,7 +44,7 @@ public class BudgetApiController {
     @Operation(summary = "Створити новий ліміт")
     @PostMapping
     public ResponseEntity<Budget> createBudget(@RequestBody Budget budget) {
-        budget.setUser(userService.getUserById(CURRENT_USER_ID));
+        budget.setUser(securityUtil.getCurrentAuthenticatedUser());
         Budget created = budgetService.createBudget(budget);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

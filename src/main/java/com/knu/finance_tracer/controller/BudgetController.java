@@ -2,6 +2,7 @@ package com.knu.finance_tracer.controller;
 
 import com.knu.finance_tracer.entity.Budget;
 import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.BudgetService;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.UserService;
@@ -17,13 +18,12 @@ public class BudgetController {
 
     private final BudgetService budgetService;
     private final CategoryService categoryService;
-    private final UserService userService;
-    private final Long CURRENT_USER_ID = 1L;
+    private final SecurityUtil securityUtil;
 
-    public BudgetController(BudgetService budgetService, CategoryService categoryService, UserService userService) {
+    public BudgetController(BudgetService budgetService, CategoryService categoryService, SecurityUtil securityUtil) {
         this.budgetService = budgetService;
         this.categoryService = categoryService;
-        this.userService = userService;
+        this.securityUtil = securityUtil;
     }
 
     @GetMapping
@@ -31,20 +31,22 @@ public class BudgetController {
                               @RequestParam(defaultValue = "5") int size,
                               Model model) {
         Pageable pageable = PageRequest.of(page, size);
-        model.addAttribute("page", budgetService.getBudgets(CURRENT_USER_ID, pageable));
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        model.addAttribute("page", budgetService.getBudgets(currentUser.getId(), pageable));
         return "budgets/list";
     }
 
     @GetMapping("/new")
     public String showCreateForm(Model model) {
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
         model.addAttribute("budget", new Budget());
-        model.addAttribute("categories", categoryService.getCategoriesByUserId(CURRENT_USER_ID));
+        model.addAttribute("categories", categoryService.getCategoriesByUserId(currentUser.getId()));
         return "budgets/create";
     }
 
     @PostMapping
     public String createBudget(@ModelAttribute Budget budget) {
-        User user = userService.getUserById(CURRENT_USER_ID);
+        User user = securityUtil.getCurrentAuthenticatedUser();
         budget.setUser(user);
         budgetService.createBudget(budget);
         return "redirect:/budgets";
@@ -52,8 +54,9 @@ public class BudgetController {
 
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
         model.addAttribute("budget", budgetService.getBudgetById(id));
-        model.addAttribute("categories", categoryService.getCategoriesByUserId(CURRENT_USER_ID));
+        model.addAttribute("categories", categoryService.getCategoriesByUserId(currentUser.getId()));
         return "budgets/edit";
     }
 

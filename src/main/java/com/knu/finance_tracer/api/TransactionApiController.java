@@ -2,6 +2,8 @@ package com.knu.finance_tracer.api;
 
 import com.knu.finance_tracer.dto.TransactionCreateDto;
 import com.knu.finance_tracer.entity.Transaction;
+import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,10 +21,11 @@ import org.springframework.web.bind.annotation.*;
 public class TransactionApiController {
 
     private final TransactionService transactionService;
-    private final Long CURRENT_USER_ID = 1L;
+    private final SecurityUtil securityUtil;
 
-    public TransactionApiController(TransactionService transactionService) {
+    public TransactionApiController(TransactionService transactionService, SecurityUtil securityUtil) {
         this.transactionService = transactionService;
+        this.securityUtil = securityUtil;
     }
 
     @Operation(summary = "Отримати сторінку транзакцій", description = "Повертає транзакції з пагінацією")
@@ -31,7 +34,8 @@ public class TransactionApiController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("dateTime").descending());
-        return ResponseEntity.ok(transactionService.getTransactions(CURRENT_USER_ID, pageable));
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        return ResponseEntity.ok(transactionService.getTransactions(currentUser.getId(), pageable));
     }
 
     @Operation(summary = "Отримати інформацію про конкретну транзакцію", description = "Повертає одину транзакцію")

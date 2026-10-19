@@ -4,10 +4,12 @@ import com.knu.finance_tracer.dto.TransactionCreateDto;
 import com.knu.finance_tracer.entity.Account;
 import com.knu.finance_tracer.entity.Category;
 import com.knu.finance_tracer.entity.Transaction;
+import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.repository.AccountRepository;
 import com.knu.finance_tracer.repository.CategoryRepository;
 import com.knu.finance_tracer.repository.TransactionRepository;
 import com.knu.finance_tracer.repository.UserRepository;
+import com.knu.finance_tracer.security.SecurityUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,17 +26,20 @@ public class TransactionService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
+    private final SecurityUtil securityUtil;
 
     public TransactionService(TransactionRepository transactionRepository,
                               AccountRepository accountRepository,
                               CategoryRepository categoryRepository,
                               UserRepository userRepository,
-                              S3Service s3Service) {
+                              S3Service s3Service,
+                              SecurityUtil securityUtil) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.s3Service = s3Service;
+        this.securityUtil = securityUtil;
     }
 
     private void updateAccountBalance(Account account, Category category, BigDecimal amount, boolean isRevert) {
@@ -72,9 +77,8 @@ public class TransactionService {
 
         updateAccountBalance(account, category, dto.getAmount(), false);
 
-        transaction.setUser(userRepository.findById(1L)
-                .orElseThrow(() -> new IllegalArgumentException("Користувача не знайдено")));
-
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        transaction.setUser(currentUser);
         transactionRepository.save(transaction);
     }
 

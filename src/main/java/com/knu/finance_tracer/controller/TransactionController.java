@@ -3,6 +3,7 @@ package com.knu.finance_tracer.controller;
 import com.knu.finance_tracer.dto.TransactionCreateDto;
 import com.knu.finance_tracer.entity.Transaction;
 import com.knu.finance_tracer.repository.TransactionRepository;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.AccountService;
 import com.knu.finance_tracer.service.BudgetService;
 import com.knu.finance_tracer.service.CategoryService;
@@ -25,15 +26,19 @@ public class TransactionController {
     private final AccountService accountService;
     private final CategoryService categoryService;
     private final BudgetService budgetService;
+    private final SecurityUtil securityUtil;
 
     public TransactionController(TransactionService transactionService,
                                  AccountService accountService,
                                  CategoryService categoryService,
-                                 BudgetService budgetService) {
+                                 BudgetService budgetService,
+                                 SecurityUtil securityUtil) { // Додано в конструктор
+
         this.transactionService = transactionService;
         this.accountService = accountService;
         this.categoryService = categoryService;
         this.budgetService = budgetService;
+        this.securityUtil = securityUtil;
     }
 
     @GetMapping
@@ -43,10 +48,11 @@ public class TransactionController {
         Pageable pageable = PageRequest.of(
                 page, size, Sort.by("dateTime").descending());
 
-        Page<Transaction> transactionPage = transactionService.getTransactions(1L, pageable);
+        Long userId = securityUtil.getCurrentAuthenticatedUser().getId();
 
-        List<Transaction> allTransactions = transactionService.getTransactionsByUserId(1L);
-        List<String> warnings = budgetService.getBudgetWarnings(1L, allTransactions);
+        Page<Transaction> transactionPage = transactionService.getTransactions(userId, pageable);
+        List<Transaction> allTransactions = transactionService.getTransactionsByUserId(userId);
+        List<String> warnings = budgetService.getBudgetWarnings(userId, allTransactions);
 
         model.addAttribute("page", transactionPage);
         model.addAttribute("budgetWarnings", warnings);
@@ -55,9 +61,12 @@ public class TransactionController {
 
     @GetMapping("/new")
     public String showCreateForm(Model model) {
+        Long userId = securityUtil.getCurrentAuthenticatedUser().getId();
+
         model.addAttribute("transaction", new TransactionCreateDto());
-        model.addAttribute("accounts", accountService.getAccountsByUserId(1L));
-        model.addAttribute("categories", categoryService.getCategoriesByUserId(1L));
+        model.addAttribute("accounts", accountService.getAccountsByUserId(userId));
+        model.addAttribute("categories", categoryService.getCategoriesByUserId(userId));
+
         return "transactions/create";
     }
 
@@ -69,6 +78,7 @@ public class TransactionController {
 
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
+        Long userId = securityUtil.getCurrentAuthenticatedUser().getId();
         Transaction transaction = transactionService.getTransactionById(id);
 
         TransactionCreateDto dto = new TransactionCreateDto();
@@ -78,8 +88,8 @@ public class TransactionController {
         dto.setAccountId(transaction.getAccount().getId());
         dto.setCategoryId(transaction.getCategory().getId());
 
-        model.addAttribute("accounts", accountService.getAccountsByUserId(1L));
-        model.addAttribute("categories", categoryService.getCategoriesByUserId(1L));
+        model.addAttribute("accounts", accountService.getAccountsByUserId(userId));
+        model.addAttribute("categories", categoryService.getCategoriesByUserId(userId));
         model.addAttribute("transactionDto", dto);
         model.addAttribute("transactionId", id);
         model.addAttribute("currentFileUrl", transaction.getReceiptFileUrl());

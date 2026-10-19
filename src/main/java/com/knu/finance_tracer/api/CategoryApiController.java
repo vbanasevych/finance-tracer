@@ -1,6 +1,8 @@
 package com.knu.finance_tracer.api;
 
 import com.knu.finance_tracer.entity.Category;
+import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,12 +19,11 @@ import org.springframework.web.bind.annotation.*;
 public class CategoryApiController {
 
     private final CategoryService categoryService;
-    private final UserService userService;
-    private final Long CURRENT_USER_ID = 1L;
+    private final SecurityUtil securityUtil;
 
-    public CategoryApiController(CategoryService categoryService, UserService userService) {
+    public CategoryApiController(CategoryService categoryService, SecurityUtil securityUtil) {
         this.categoryService = categoryService;
-        this.userService = userService;
+        this.securityUtil = securityUtil;
     }
 
     @Operation(summary = "Отримати сторінку категорій", description = "Повертає категорії з пагінацією (тільки активні)")
@@ -30,7 +31,8 @@ public class CategoryApiController {
     public ResponseEntity<Page<Category>> getCategories(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
-        return ResponseEntity.ok(categoryService.getCategories(CURRENT_USER_ID, PageRequest.of(page, size)));
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        return ResponseEntity.ok(categoryService.getCategories(currentUser.getId(), PageRequest.of(page, size)));
     }
 
     @Operation(summary = "Отримати інформацію про конкретну категорію", description = "Повертає одну категорію")
@@ -42,7 +44,7 @@ public class CategoryApiController {
     @Operation(summary = "Створити нову категорію")
     @PostMapping
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
-        category.setUser(userService.getUserById(CURRENT_USER_ID));
+        category.setUser(securityUtil.getCurrentAuthenticatedUser());
         Category created = categoryService.createCategory(category);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

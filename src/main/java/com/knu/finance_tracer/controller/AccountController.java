@@ -2,6 +2,7 @@ package com.knu.finance_tracer.controller;
 
 import com.knu.finance_tracer.entity.Account;
 import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.AccountService;
 import com.knu.finance_tracer.service.UserService;
 import org.springframework.data.domain.PageRequest;
@@ -15,12 +16,11 @@ import org.springframework.web.bind.annotation.*;
 public class AccountController {
 
     private final AccountService accountService;
-    private final UserService userService;
-    private final Long CURRENT_USER_ID = 1L;
+    private final SecurityUtil securityUtil;
 
-    public AccountController(AccountService accountService, UserService userService) {
+    public AccountController(AccountService accountService, SecurityUtil securityUtil) {
         this.accountService = accountService;
-        this.userService = userService;
+        this.securityUtil = securityUtil;
     }
 
     @GetMapping
@@ -28,7 +28,8 @@ public class AccountController {
                                @RequestParam(defaultValue = "5") int size,
                                Model model) {
         Pageable pageable = PageRequest.of(page, size);
-        model.addAttribute("page", accountService.getAccounts(CURRENT_USER_ID, pageable));
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        model.addAttribute("page", accountService.getAccounts(currentUser.getId(), pageable));
         return "accounts/list";
     }
 
@@ -40,8 +41,8 @@ public class AccountController {
 
     @PostMapping
     public String createAccount(@ModelAttribute Account account) {
-        User user = userService.getUserById(CURRENT_USER_ID);
-        account.setUser(user);
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        account.setUser(currentUser);
         accountService.createAccount(account);
         return "redirect:/accounts";
     }

@@ -2,6 +2,7 @@ package com.knu.finance_tracer.controller;
 
 import com.knu.finance_tracer.entity.Category;
 import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.UserService;
 import org.springframework.data.domain.PageRequest;
@@ -15,12 +16,11 @@ import org.springframework.web.bind.annotation.*;
 public class CategoryController {
 
     private final CategoryService categoryService;
-    private final UserService userService;
-    private final Long CURRENT_USER_ID = 1L;
+    private final SecurityUtil securityUtil;
 
-    public CategoryController(CategoryService categoryService, UserService userService) {
+    public CategoryController(CategoryService categoryService, SecurityUtil securityUtil) {
         this.categoryService = categoryService;
-        this.userService = userService;
+        this.securityUtil = securityUtil;
     }
 
     @GetMapping
@@ -28,7 +28,8 @@ public class CategoryController {
                                  @RequestParam(defaultValue = "5") int size,
                                  Model model) {
         Pageable pageable = PageRequest.of(page, size);
-        model.addAttribute("page", categoryService.getCategories(CURRENT_USER_ID, pageable));
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+        model.addAttribute("page", categoryService.getCategories(currentUser.getId(), pageable));
         return "categories/list";
     }
 
@@ -40,7 +41,7 @@ public class CategoryController {
 
     @PostMapping
     public String createCategory(@ModelAttribute Category category) {
-        User user = userService.getUserById(CURRENT_USER_ID);
+        User user = securityUtil.getCurrentAuthenticatedUser();
         category.setUser(user);
         categoryService.createCategory(category);
         return "redirect:/categories";
