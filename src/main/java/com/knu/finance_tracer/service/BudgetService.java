@@ -80,4 +80,8 @@ public class BudgetService {
         }
         return warnings;
     }
+
+    public Page<Budget> getAllBudgetsForAdmin(Pageable pageable) {
+        return budgetRepository.findAll(pageable);
+    }
 }

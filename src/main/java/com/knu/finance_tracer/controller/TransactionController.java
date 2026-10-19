@@ -1,8 +1,9 @@
 package com.knu.finance_tracer.controller;
 
 import com.knu.finance_tracer.dto.TransactionCreateDto;
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.Transaction;
-import com.knu.finance_tracer.repository.TransactionRepository;
+import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.AccountService;
 import com.knu.finance_tracer.service.BudgetService;
@@ -12,10 +13,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -32,8 +36,7 @@ public class TransactionController {
                                  AccountService accountService,
                                  CategoryService categoryService,
                                  BudgetService budgetService,
-                                 SecurityUtil securityUtil) { // Додано в конструктор
-
+                                 SecurityUtil securityUtil) {
         this.transactionService = transactionService;
         this.accountService = accountService;
         this.categoryService = categoryService;
@@ -41,18 +44,29 @@ public class TransactionController {
         this.securityUtil = securityUtil;
     }
 
+    private void checkTransactionOwnership(Transaction transaction, User currentUser) {
+        if (currentUser.getRole() != Role.ROLE_ADMIN && !transaction.getUser().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ви не маєте доступу до цієї транзакції");
+        }
+    }
+
     @GetMapping
     public String listTransactions(@RequestParam(defaultValue = "0") int page,
                                    @RequestParam(defaultValue = "5") int size,
                                    Model model) {
-        Pageable pageable = PageRequest.of(
-                page, size, Sort.by("dateTime").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("dateTime").descending());
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
 
-        Long userId = securityUtil.getCurrentAuthenticatedUser().getId();
+        Page<Transaction> transactionPage;
+        List<String> warnings = new ArrayList<>();
 
-        Page<Transaction> transactionPage = transactionService.getTransactions(userId, pageable);
-        List<Transaction> allTransactions = transactionService.getTransactionsByUserId(userId);
-        List<String> warnings = budgetService.getBudgetWarnings(userId, allTransactions);
+        if (currentUser.getRole() == Role.ROLE_ADMIN) {
+            transactionPage = transactionService.getAllTransactionsForAdmin(pageable);
+        } else {
+            transactionPage = transactionService.getTransactions(currentUser.getId(), pageable);
+            List<Transaction> allTransactions = transactionService.getTransactionsByUserId(currentUser.getId());
+            warnings = budgetService.getBudgetWarnings(currentUser.getId(), allTransactions);
+        }
 
         model.addAttribute("page", transactionPage);
         model.addAttribute("budgetWarnings", warnings);
@@ -70,16 +84,14 @@ public class TransactionController {
         return "transactions/create";
     }
 
-    @PostMapping
-    public String createTransaction(@ModelAttribute TransactionCreateDto dto) {
-        transactionService.createTransaction(dto);
-        return "redirect:/transactions/new?success";
-    }
-
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
-        Long userId = securityUtil.getCurrentAuthenticatedUser().getId();
         Transaction transaction = transactionService.getTransactionById(id);
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+
+        checkTransactionOwnership(transaction, currentUser);
+
+        Long ownerId = transaction.getUser().getId();
 
         TransactionCreateDto dto = new TransactionCreateDto();
         dto.setAmount(transaction.getAmount());
@@ -88,8 +100,8 @@ public class TransactionController {
         dto.setAccountId(transaction.getAccount().getId());
         dto.setCategoryId(transaction.getCategory().getId());
 
-        model.addAttribute("accounts", accountService.getAccountsByUserId(userId));
-        model.addAttribute("categories", categoryService.getCategoriesByUserId(userId));
+        model.addAttribute("accounts", accountService.getAccountsByUserId(ownerId));
+        model.addAttribute("categories", categoryService.getCategoriesByUserId(ownerId));
         model.addAttribute("transactionDto", dto);
         model.addAttribute("transactionId", id);
         model.addAttribute("currentFileUrl", transaction.getReceiptFileUrl());
@@ -98,13 +110,29 @@ public class TransactionController {
 
     @PostMapping("/update/{id}")
     public String updateTransaction(@PathVariable Long id, @ModelAttribute TransactionCreateDto dto) {
+        Transaction transaction = transactionService.getTransactionById(id);
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+
+        checkTransactionOwnership(transaction, currentUser);
+
         transactionService.updateTransaction(id, dto);
         return "redirect:/transactions";
     }
 
     @PostMapping("/delete/{id}")
     public String deleteTransaction(@PathVariable Long id) {
+        Transaction transaction = transactionService.getTransactionById(id);
+        User currentUser = securityUtil.getCurrentAuthenticatedUser();
+
+        checkTransactionOwnership(transaction, currentUser);
+
         transactionService.deleteTransactionById(id);
         return "redirect:/transactions";
+    }
+
+    @PostMapping
+    public String createTransaction(@ModelAttribute TransactionCreateDto dto) {
+        transactionService.createTransaction(dto);
+        return "redirect:/transactions/new?success";
     }
 }

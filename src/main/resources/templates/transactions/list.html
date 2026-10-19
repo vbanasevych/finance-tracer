@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk" xmlns:th="http://www.thymeleaf.org">
+<html lang="uk" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6T1H25TGB7"></script>
@@ -65,6 +65,7 @@
     <table class="table table-bordered bg-white">
         <thead class="table-dark">
         <tr>
+            <th sec:authorize="hasRole('ADMIN')">Власник</th>
             <th>Дата</th>
             <th>Сума</th>
             <th>Категорія</th>
@@ -76,6 +77,7 @@
         </thead>
         <tbody>
         <tr th:each="t : ${page.content}">
+            <td sec:authorize="hasRole('ADMIN')" th:text="${t.user.name}"></td>
             <td th:text="${#temporals.format(t.dateTime, 'dd.MM.yyyy HH:mm')}"></td>
             <td th:text="${t.amount}"></td>
             <td th:text="${t.category.name}"></td>

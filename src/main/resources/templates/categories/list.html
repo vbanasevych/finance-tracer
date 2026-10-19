@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk" xmlns:th="http://www.thymeleaf.org">
+<html lang="uk" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6T1H25TGB7"></script>
@@ -50,14 +50,16 @@
 <div class="container mt-5">
     <div class="d-flex justify-content-between mb-3">
         <h2>Мої категорії</h2>
-        <a href="/categories/new" class="btn btn-primary">Додати категорію</a>
+        <a sec:authorize="hasRole('ADMIN')" class="btn btn-success" href="/categories/new">Додати категорію</a>
     </div>
     <table class="table table-bordered bg-white">
         <thead class="table-dark">
-        <tr><th>Назва</th><th>Тип</th><th>Дії</th></tr>
+        <tr><th sec:authorize="hasRole('ADMIN')">Власник</th>
+            <th>Назва</th><th>Тип</th><th>Дії</th></tr>
         </thead>
         <tbody>
         <tr th:each="cat : ${page.content}">
+            <td sec:authorize="hasRole('ADMIN')" th:text="${cat.user.name}"></td>
             <td th:text="${cat.name}"></td>
             <td th:text="${cat.isExpense ? 'Витрата' : 'Дохід'}"></td>
             <td>

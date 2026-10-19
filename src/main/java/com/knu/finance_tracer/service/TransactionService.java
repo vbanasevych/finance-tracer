@@ -131,4 +131,8 @@ public class TransactionService {
         updateAccountBalance(transaction.getAccount(), transaction.getCategory(), transaction.getAmount(), true);
         transactionRepository.deleteById(id);
     }
+
+    public Page<Transaction> getAllTransactionsForAdmin(Pageable pageable) {
+        return transactionRepository.findAll(pageable);
+    }
 }

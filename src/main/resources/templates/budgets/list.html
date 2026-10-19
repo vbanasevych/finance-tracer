@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk" xmlns:th="http://www.thymeleaf.org">
+<html lang="uk" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6T1H25TGB7"></script>
@@ -54,10 +54,13 @@
     </div>
     <table class="table table-bordered bg-white">
         <thead class="table-dark">
-        <tr><th>Категорія</th><th>Ліміт</th><th>Період</th><th>Дії</th></tr>
+        <tr>
+            <th sec:authorize="hasRole('ADMIN')">Власник</th>
+            <th>Категорія</th><th>Ліміт</th><th>Період</th><th>Дії</th></tr>
         </thead>
         <tbody>
         <tr th:each="b : ${page.content}">
+            <td sec:authorize="hasRole('ADMIN')" th:text="${b.user.name}"></td>
             <td th:text="${b.category.name}"></td>
             <td th:text="${b.limitAmount}"></td>
             <td th:text="${b.startDate} + ' — ' + ${b.endDate}"></td>

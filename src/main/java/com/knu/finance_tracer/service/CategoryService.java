@@ -58,4 +58,8 @@ public class CategoryService {
         category.setIsDeleted(true);
         categoryRepository.save(category);
     }
+
+    public Page<Category> getAllCategoriesForAdmin(Pageable pageable) {
+        return categoryRepository.findAll(pageable);
+    }
 }

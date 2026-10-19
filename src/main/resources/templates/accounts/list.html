@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk" xmlns:th="http://www.thymeleaf.org">
+<html lang="uk" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-6T1H25TGB7"></script>
@@ -57,6 +57,7 @@
     <table class="table table-bordered bg-white shadow-sm">
         <thead class="table-dark">
         <tr>
+            <th sec:authorize="hasRole('ADMIN')">Власник</th>
             <th>Назва</th>
             <th>Баланс</th>
             <th>Валюта</th>
@@ -65,6 +66,7 @@
         </thead>
         <tbody>
         <tr th:each="account : ${page.content}">
+            <td sec:authorize="hasRole('ADMIN')" th:text="${account.user.name}"></td>
             <td th:text="${account.name}"></td>
             <td th:text="${account.balance}"></td>
             <td th:text="${account.currency}"></td>
