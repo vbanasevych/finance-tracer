@@ -1,5 +1,6 @@
 package com.knu.finance_tracer.service;
 
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -31,11 +32,10 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUser(Long id, User userDetails) {
+    public void updateUserRole(Long id, Role newRole) {
         User user = getUserById(id);
-        user.setName(userDetails.getName());
-        user.setEmail(userDetails.getEmail());
-        return userRepository.save(user);
+        user.setRole(newRole);
+        userRepository.save(user);
     }
 
     @Transactional

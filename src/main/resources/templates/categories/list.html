@@ -26,23 +26,23 @@
                 <li class="nav-item"><a class="nav-link" href="/accounts">Рахунки</a></li>
                 <li class="nav-item"><a class="nav-link" href="/categories">Категорії</a></li>
                 <li class="nav-item"><a class="nav-link" href="/budgets">Бюджети</a></li>
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                    <a class="nav-link text-warning" href="/users">Користувачі (Admin)</a>
+                </li>
             </ul>
-            <div class="d-flex align-items-center">
-                <a sec:authorize="isAuthenticated()" class="btn btn-success me-3" href="/transactions/new">+ Нова витрата</a>
-                <a sec:authorize="isAnonymous()" class="btn btn-outline-light" href="/login">Увійти</a>
-
-                <div sec:authorize="isAuthenticated()" class="dropdown">
-                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span sec:authentication="name">Користувач</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
-                        <li>
-                            <form th:action="@{/logout}" method="post" class="m-0">
-                                <button type="submit" class="dropdown-item text-danger">Вийти</button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
+            <div sec:authorize="isAuthenticated()" class="dropdown">
+                <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span sec:authentication="name" class="me-1">Користувач</span>
+                    <span sec:authorize="hasRole('PREMIUM')" title="Premium" style="font-size: 0.9em;">⭐</span>
+                    <span sec:authorize="hasRole('ADMIN')" class="badge bg-danger ms-1" style="font-size: 0.7em;">ADMIN</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                    <li>
+                        <form th:action="@{/logout}" method="post" class="m-0">
+                            <button type="submit" class="dropdown-item text-danger">Вийти</button>
+                        </form>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
@@ -50,7 +50,7 @@
 <div class="container mt-5">
     <div class="d-flex justify-content-between mb-3">
         <h2>Мої категорії</h2>
-        <a sec:authorize="hasRole('ADMIN')" class="btn btn-success" href="/categories/new">Додати категорію</a>
+        <a sec:authorize="hasAnyRole('ADMIN', 'PREMIUM')" class="btn btn-success" href="/categories/new">Додати категорію</a>
     </div>
     <table class="table table-bordered bg-white">
         <thead class="table-dark">
@@ -63,12 +63,15 @@
             <td th:text="${cat.name}"></td>
             <td th:text="${cat.isExpense ? 'Витрата' : 'Дохід'}"></td>
             <td>
-                <div class="d-flex gap-2 align-items-center">
+                <div th:if="${#authorization.expression('hasRole(''ADMIN'')') or #authentication.principal.username == category.user.email}">
                     <a th:href="@{/categories/edit/{id}(id=${cat.id})}" class="btn btn-sm btn-warning">Редагувати</a>
 
                     <form th:action="@{/categories/delete/{id}(id=${cat.id})}" method="post" class="m-0">
                         <button type="submit" class="btn btn-sm btn-danger">Видалити</button>
                     </form>
+                </div>
+                <div th:unless="${#authorization.expression('hasRole(''ADMIN'')') or #authentication.principal.username == category.user.email}">
+                    <span class="badge bg-secondary">Базова</span>
                 </div>
             </td>
         </tr>
