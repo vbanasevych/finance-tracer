@@ -47,6 +47,7 @@ public class CategoryController {
         }
 
         model.addAttribute("page", categoryPage);
+        model.addAttribute("currentUser", currentUser);
         return "categories/list";
     }
 

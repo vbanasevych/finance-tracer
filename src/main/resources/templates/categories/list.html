@@ -63,7 +63,7 @@
             <td th:text="${cat.name}"></td>
             <td th:text="${cat.isExpense ? 'Витрата' : 'Дохід'}"></td>
             <td>
-                <div th:if="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and #authentication.principal.username == cat.user.email)}">
+                <div th:if="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and cat.user.id == currentUser.id)}">
                     <div class="d-flex gap-2">
                         <a th:href="@{/categories/edit/{id}(id=${cat.id})}" class="btn btn-sm btn-warning">Редагувати</a>
 
@@ -72,7 +72,7 @@
                         </form>
                     </div>
                 </div>
-                <div th:unless="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and #authentication.principal.username == cat.user.email)}">
+                <div th:unless="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and cat.user.id == currentUser.id)}">
                     <span class="badge bg-secondary">Базова</span>
                 </div>
             </td>
