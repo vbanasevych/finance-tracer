@@ -50,7 +50,7 @@
 <div class="container mt-5">
     <div class="d-flex justify-content-between mb-3">
         <h2>Мої категорії</h2>
-        <a sec:authorize="hasAnyRole('ADMIN', 'PREMIUM')" class="btn btn-success" href="/categories/new">Додати категорію</a>
+        <a sec:authorize="hasAnyRole('ADMIN', 'PREMIUM')" class="btn btn-primary" href="/categories/new">Додати категорію</a>
     </div>
     <table class="table table-bordered bg-white">
         <thead class="table-dark">
@@ -58,22 +58,26 @@
             <th>Назва</th><th>Тип</th><th>Дії</th></tr>
         </thead>
         <tbody>
-        <tr th:each="cat : ${page.content}">
+        <tr th:each="cat : ${page.content}" th:classappend="${cat.isDeleted ? 'table-secondary text-muted' : ''}">
             <td sec:authorize="hasRole('ADMIN')" th:text="${cat.user != null ? cat.user.name : 'Система'}"></td>
             <td th:text="${cat.name}"></td>
             <td th:text="${cat.isExpense ? 'Витрата' : 'Дохід'}"></td>
             <td>
-                <div th:if="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and cat.user.id == currentUser.id)}">
-                    <div class="d-flex gap-2">
-                        <a th:href="@{/categories/edit/{id}(id=${cat.id})}" class="btn btn-sm btn-warning">Редагувати</a>
+                <span th:if="${cat.isDeleted}" class="badge bg-danger">Видалена</span>
 
-                        <form th:action="@{/categories/delete/{id}(id=${cat.id})}" method="post" class="m-0">
-                            <button type="submit" class="btn btn-sm btn-danger">Видалити</button>
-                        </form>
+                <div th:unless="${cat.isDeleted}">
+                    <div th:if="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and cat.user.id == currentUser.id)}">
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/categories/edit/{id}(id=${cat.id})}" class="btn btn-sm btn-warning">Редагувати</a>
+
+                            <form th:action="@{/categories/delete/{id}(id=${cat.id})}" method="post" class="m-0">
+                                <button type="submit" class="btn btn-sm btn-danger">Видалити</button>
+                            </form>
+                        </div>
                     </div>
-                </div>
-                <div th:unless="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and cat.user.id == currentUser.id)}">
-                    <span class="badge bg-secondary">Базова</span>
+                    <div th:unless="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and cat.user.id == currentUser.id)}">
+                        <span class="badge bg-secondary">Базова</span>
+                    </div>
                 </div>
             </td>
         </tr>
