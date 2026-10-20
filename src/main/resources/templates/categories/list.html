@@ -59,18 +59,20 @@
         </thead>
         <tbody>
         <tr th:each="cat : ${page.content}">
-            <td sec:authorize="hasRole('ADMIN')" th:text="${cat.user.name}"></td>
+            <td sec:authorize="hasRole('ADMIN')" th:text="${cat.user != null ? cat.user.name : 'Система'}"></td>
             <td th:text="${cat.name}"></td>
             <td th:text="${cat.isExpense ? 'Витрата' : 'Дохід'}"></td>
             <td>
-                <div th:if="${#authorization.expression('hasRole(''ADMIN'')') or #authentication.principal.username == category.user.email}">
-                    <a th:href="@{/categories/edit/{id}(id=${cat.id})}" class="btn btn-sm btn-warning">Редагувати</a>
+                <div th:if="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and #authentication.principal.username == cat.user.email)}">
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/categories/edit/{id}(id=${cat.id})}" class="btn btn-sm btn-warning">Редагувати</a>
 
-                    <form th:action="@{/categories/delete/{id}(id=${cat.id})}" method="post" class="m-0">
-                        <button type="submit" class="btn btn-sm btn-danger">Видалити</button>
-                    </form>
+                        <form th:action="@{/categories/delete/{id}(id=${cat.id})}" method="post" class="m-0">
+                            <button type="submit" class="btn btn-sm btn-danger">Видалити</button>
+                        </form>
+                    </div>
                 </div>
-                <div th:unless="${#authorization.expression('hasRole(''ADMIN'')') or #authentication.principal.username == category.user.email}">
+                <div th:unless="${#authorization.expression('hasRole(''ADMIN'')') or (cat.user != null and #authentication.principal.username == cat.user.email)}">
                     <span class="badge bg-secondary">Базова</span>
                 </div>
             </td>
