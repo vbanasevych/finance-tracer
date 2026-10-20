@@ -24,7 +24,7 @@
             </ul>
             <div sec:authorize="isAuthenticated()" class="dropdown">
                 <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span sec:authentication="principal.user.name" class="me-1">Користувач</span>
+                    <span th:text="${#authentication.principal.user.name}" class="me-1">Користувач</span>
                     <span sec:authorize="hasRole('PREMIUM')" title="Premium" style="font-size: 0.9em;">⭐</span>
                     <span sec:authorize="hasRole('ADMIN')" class="badge bg-danger ms-1" style="font-size: 0.7em;">ADMIN</span>
                 </button>
