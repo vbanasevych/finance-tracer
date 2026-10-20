@@ -22,7 +22,6 @@
                         Реєстрація успішна! Тепер ви можете увійти.
                     </div>
 
-                    <!-- Spring Security за замовчуванням очікує поля username та password -->
                     <form th:action="@{/login}" method="post">
                         <div class="mb-3">
                             <label for="username" class="form-label">Email</label>
@@ -34,6 +33,13 @@
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Увійти</button>
                     </form>
+                    <div class="text-center mb-3 text-muted">АБО</div>
+                    <div class="d-grid gap-2 mb-3">
+                       <a href="/oauth2/authorization/google" class="btn btn-outline-danger">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" width="20" class="me-2">
+                            Увійти через Google
+                        </a>
+                    </div>
 
                     <div class="text-center mt-3">
                         <a th:href="@{/register}" class="text-decoration-none">Немає акаунту? Зареєструватися</a>

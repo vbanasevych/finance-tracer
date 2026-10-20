@@ -18,6 +18,14 @@ spring:
       port: ${PORT_REDIS}
     cache:
       type: redis
+    security:
+      oauth2:
+        client:
+          registration:
+            google:
+              client-id: ${GOOGLE_CLIENT_ID}
+              client-secret: ${GOOGLE_CLIENT_SECRET}
+              scope: profile, email
 
 aws:
   s3:
