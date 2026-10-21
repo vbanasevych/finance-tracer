@@ -1,111 +1,169 @@
 package com.knu.finance_tracer.controller;
 
 import com.knu.finance_tracer.dto.TransactionCreateDto;
-import com.knu.finance_tracer.entity.Account;
-import com.knu.finance_tracer.entity.Category;
-import com.knu.finance_tracer.entity.Transaction;
-import com.knu.finance_tracer.service.AccountService;
-import com.knu.finance_tracer.service.BudgetService;
-import com.knu.finance_tracer.service.CategoryService;
-import com.knu.finance_tracer.service.TransactionService;
+import com.knu.finance_tracer.entity.*;
+import com.knu.finance_tracer.security.SecurityUtil;
+import com.knu.finance_tracer.service.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.ui.Model;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(TransactionController.class)
+@Import(ControllerTestConfig.class)
 class TransactionControllerTest {
 
-    @Mock private TransactionService transactionService;
-    @Mock private AccountService accountService;
-    @Mock private CategoryService categoryService;
-    @Mock private Model model;
-    @Mock private BudgetService budgetService;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @InjectMocks
-    private TransactionController transactionController;
+    @MockitoBean private TransactionService transactionService;
+    @MockitoBean private AccountService accountService;
+    @MockitoBean private CategoryService categoryService;
+    @MockitoBean private BudgetService budgetService;
+    @MockitoBean private SecurityUtil securityUtil;
+    @MockitoBean private CacheManager cacheManager;
 
-    @Test
-    void listTransactions_ShouldReturnView() {
-        org.springframework.data.domain.Page<Transaction> page = new org.springframework.data.domain.PageImpl<>(List.of());
-        when(transactionService.getTransactions(eq(1L), any(org.springframework.data.domain.Pageable.class))).thenReturn(page);
-        when(transactionService.getTransactionsByUserId(1L)).thenReturn(List.of());
-        when(budgetService.getBudgetWarnings(eq(1L), anyList())).thenReturn(List.of("Warning"));
+    private User regularUser;
+    private User adminUser;
+    private Transaction transaction;
 
-        String view = transactionController.listTransactions(0, 5, model);
+    @BeforeEach
+    void setUp() {
+        regularUser = new User();
+        regularUser.setId(1L);
+        regularUser.setRole(Role.ROLE_USER);
 
-        assertEquals("transactions/list", view);
-        verify(model).addAttribute(eq("page"), any());
-        verify(model).addAttribute(eq("budgetWarnings"), anyList());
+        adminUser = new User();
+        adminUser.setId(2L);
+        adminUser.setRole(Role.ROLE_ADMIN);
+
+        Account account = new Account();
+        account.setId(1L);
+
+        Category category = new Category();
+        category.setId(1L);
+
+        transaction = new Transaction();
+        transaction.setId(1L);
+        transaction.setAmount(BigDecimal.TEN);
+        transaction.setDateTime(LocalDateTime.now());
+        transaction.setUser(regularUser);
+        transaction.setAccount(account);
+        transaction.setCategory(category);
     }
 
     @Test
-    void showCreateForm_ShouldReturnView() {
+    @WithMockUser
+    void listTransactions_asUser() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+        when(transactionService.getTransactions(eq(1L), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(transaction)));
+        when(transactionService.getTransactionsByUserId(1L)).thenReturn(List.of(transaction));
+        when(budgetService.getBudgetWarnings(eq(1L), any())).thenReturn(List.of("Warning"));
+
+        mockMvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("transactions/list"))
+                .andExpect(model().attributeExists("page"));
+    }
+
+    @Test
+    @WithMockUser
+    void listTransactions_asAdmin() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(adminUser);
+        when(transactionService.getAllTransactionsForAdmin(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(transaction)));
+
+        mockMvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("transactions/list"));
+    }
+
+    @Test
+    @WithMockUser
+    void showCreateForm() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
         when(accountService.getAccountsByUserId(1L)).thenReturn(List.of());
         when(categoryService.getCategoriesByUserId(1L)).thenReturn(List.of());
 
-        String view = transactionController.showCreateForm(model);
-
-        assertEquals("transactions/create", view);
-        verify(model).addAttribute(eq("transaction"), any(TransactionCreateDto.class));
-        verify(model).addAttribute(eq("accounts"), anyList());
-        verify(model).addAttribute(eq("categories"), anyList());
+        mockMvc.perform(get("/transactions/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("transactions/create"));
     }
 
     @Test
-    void createTransaction_ShouldSaveAndRedirect() {
-        String view = transactionController.createTransaction(new TransactionCreateDto());
-        assertEquals("redirect:/transactions/new?success", view);
-        verify(transactionService).createTransaction(any(TransactionCreateDto.class));
+    @WithMockUser
+    void showEditForm_owner() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+        when(transactionService.getTransactionById(1L)).thenReturn(transaction);
+
+        mockMvc.perform(get("/transactions/edit/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("transactions/edit"));
     }
 
     @Test
-    void showEditForm_ShouldMapDtoAndReturnView() {
-        Transaction t = new Transaction();
-        t.setAmount(BigDecimal.TEN);
-        t.setDateTime(LocalDateTime.now());
-        t.setDescription("Test");
-        t.setReceiptFileUrl("url");
+    @WithMockUser
+    void showEditForm_forbidden() throws Exception {
+        User anotherUser = new User();
+        anotherUser.setId(99L);
+        anotherUser.setRole(Role.ROLE_USER);
 
-        Account acc = new Account(); acc.setId(2L);
-        Category cat = new Category(); cat.setId(3L);
-        t.setAccount(acc);
-        t.setCategory(cat);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(anotherUser);
+        when(transactionService.getTransactionById(1L)).thenReturn(transaction);
 
-        when(transactionService.getTransactionById(1L)).thenReturn(t);
-        when(accountService.getAccountsByUserId(1L)).thenReturn(List.of());
-        when(categoryService.getCategoriesByUserId(1L)).thenReturn(List.of());
-
-        String view = transactionController.showEditForm(1L, model);
-
-        assertEquals("transactions/edit", view);
-        verify(model).addAttribute(eq("transactionDto"), any(TransactionCreateDto.class));
-        verify(model).addAttribute("transactionId", 1L);
-        verify(model).addAttribute("currentFileUrl", "url");
+        mockMvc.perform(get("/transactions/edit/1"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void updateTransaction_ShouldUpdateAndRedirect() {
-        String view = transactionController.updateTransaction(1L, new TransactionCreateDto());
-        assertEquals("redirect:/transactions", view);
-        verify(transactionService).updateTransaction(eq(1L), any(TransactionCreateDto.class));
+    @WithMockUser
+    void updateTransaction() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+        when(transactionService.getTransactionById(1L)).thenReturn(transaction);
+
+        mockMvc.perform(post("/transactions/update/1")
+                        .with(csrf())
+                        .flashAttr("transactionCreateDto", new TransactionCreateDto()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/transactions"));
     }
 
     @Test
-    void deleteTransaction_ShouldDeleteAndRedirect() {
-        String view = transactionController.deleteTransaction(1L);
-        assertEquals("redirect:/transactions", view);
-        verify(transactionService).deleteTransactionById(1L);
+    @WithMockUser
+    void deleteTransaction() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+        when(transactionService.getTransactionById(1L)).thenReturn(transaction);
+
+        mockMvc.perform(post("/transactions/delete/1").with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/transactions"));
+    }
+
+    @Test
+    @WithMockUser
+    void createTransaction() throws Exception {
+        mockMvc.perform(post("/transactions")
+                        .with(csrf())
+                        .flashAttr("transactionCreateDto", new TransactionCreateDto()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/transactions/new?success"));
     }
 }

@@ -1,84 +1,150 @@
 package com.knu.finance_tracer.controller;
 
 import com.knu.finance_tracer.entity.Account;
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.AccountService;
-import com.knu.finance_tracer.service.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.ui.Model;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(AccountController.class)
+@Import(ControllerTestConfig.class)
 class AccountControllerTest {
 
-    @Mock private AccountService accountService;
-    @Mock private UserService userService;
-    @Mock private Model model;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @InjectMocks
-    private AccountController accountController;
+    @MockitoBean private AccountService accountService;
+    @MockitoBean
+    private SecurityUtil securityUtil;
+    @MockitoBean private CacheManager cacheManager;
 
-    @Test
-    void listAccounts_ShouldReturnViewAndModel() {
-        Page<Account> page = new PageImpl<>(List.of(new Account()));
-        when(accountService.getAccounts(eq(1L), any(Pageable.class))).thenReturn(page);
-        String view = accountController.listAccounts(0, 5, model);
-        assertEquals("accounts/list", view);
-        verify(model).addAttribute(eq("page"), any());
+    private User regularUser;
+    private User adminUser;
+    private Account account;
+
+    @BeforeEach
+    void setUp() {
+        regularUser = new User();
+        regularUser.setId(1L);
+        regularUser.setRole(Role.ROLE_USER);
+
+        adminUser = new User();
+        adminUser.setId(2L);
+        adminUser.setRole(Role.ROLE_ADMIN);
+
+        account = new Account();
+        account.setId(1L);
+        account.setUser(regularUser);
+        account.setName("Mono");
+        account.setBalance(BigDecimal.valueOf(100));
+        account.setCurrency("UAH");
     }
 
     @Test
-    void showCreateForm_ShouldReturnView() {
-        String view = accountController.showCreateForm(model);
-        assertEquals("accounts/create", view);
-        verify(model).addAttribute(eq("account"), any(Account.class));
+    @WithMockUser
+    void listAccounts_asUser() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+        when(accountService.getAccounts(eq(1L), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(account)));
+
+        mockMvc.perform(get("/accounts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("accounts/list"));
     }
 
     @Test
-    void createAccount_ShouldSaveAndRedirect() {
-        Account account = new Account();
-        User user = new User();
-        when(userService.getUserById(1L)).thenReturn(user);
+    @WithMockUser
+    void listAccounts_asAdmin() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(adminUser);
+        when(accountService.getAllAccountsForAdmin(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(account)));
 
-        String view = accountController.createAccount(account);
-
-        assertEquals("redirect:/accounts", view);
-        assertEquals(user, account.getUser());
-        verify(accountService).createAccount(account);
+        mockMvc.perform(get("/accounts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("accounts/list"));
     }
 
     @Test
-    void showEditForm_ShouldReturnViewAndModel() {
-        when(accountService.getAccountById(1L)).thenReturn(new Account());
-        String view = accountController.showEditForm(1L, model);
-        assertEquals("accounts/edit", view);
-        verify(model).addAttribute(eq("account"), any(Account.class));
+    @WithMockUser
+    void showCreateForm() throws Exception {
+        mockMvc.perform(get("/accounts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("accounts/create"));
     }
 
     @Test
-    void updateAccount_ShouldUpdateAndRedirect() {
-        String view = accountController.updateAccount(1L, new Account());
-        assertEquals("redirect:/accounts", view);
-        verify(accountService).updateAccount(eq(1L), any(Account.class));
+    @WithMockUser
+    void createAccount() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+
+        mockMvc.perform(post("/accounts")
+                        .with(csrf())
+                        .flashAttr("account", account))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/accounts"));
     }
 
     @Test
-    void deleteAccount_ShouldDeleteAndRedirect() {
-        String view = accountController.deleteAccount(1L);
-        assertEquals("redirect:/accounts", view);
-        verify(accountService).deleteAccount(1L);
+    @WithMockUser
+    void showEditForm_owner() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+        when(accountService.getAccountById(1L)).thenReturn(account);
+
+        mockMvc.perform(get("/accounts/edit/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("accounts/edit"));
+    }
+
+    @Test
+    @WithMockUser
+    void showEditForm_forbidden() throws Exception {
+        User another = new User(); another.setId(99L); another.setRole(Role.ROLE_USER);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(another);
+        when(accountService.getAccountById(1L)).thenReturn(account);
+
+        mockMvc.perform(get("/accounts/edit/1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser
+    void updateAccount() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+        when(accountService.getAccountById(1L)).thenReturn(account);
+
+        mockMvc.perform(post("/accounts/update/1").with(csrf()).flashAttr("account", account))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/accounts"));
+    }
+
+    @Test
+    @WithMockUser
+    void deleteAccount() throws Exception {
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regularUser);
+        when(accountService.getAccountById(1L)).thenReturn(account);
+
+        mockMvc.perform(post("/accounts/delete/1").with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/accounts"));
     }
 }

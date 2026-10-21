@@ -1,10 +1,13 @@
 package com.knu.finance_tracer.api;
 
 import com.knu.finance_tracer.entity.Budget;
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.BudgetService;
 import com.knu.finance_tracer.service.UserService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,9 +30,20 @@ class BudgetApiControllerTest {
 
     @Mock private BudgetService budgetService;
     @Mock private UserService userService;
+    @Mock private SecurityUtil securityUtil;
 
     @InjectMocks
     private BudgetApiController controller;
+
+    private User currentUser;
+
+    @BeforeEach
+    void setUp() {
+        currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(Role.ROLE_USER);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(currentUser);
+    }
 
     @Test
     void getBudgets_ShouldReturnPageAnd200() {
@@ -45,6 +59,7 @@ class BudgetApiControllerTest {
     @Test
     void getBudgetById_ShouldReturnBudgetAnd200() {
         Budget budget = new Budget();
+        budget.setUser(currentUser);
         when(budgetService.getBudgetById(1L)).thenReturn(budget);
 
         ResponseEntity<Budget> response = controller.getBudgetById(1L);
@@ -56,7 +71,6 @@ class BudgetApiControllerTest {
     @Test
     void createBudget_ShouldReturnCreatedBudgetAnd201() {
         Budget budget = new Budget();
-        when(userService.getUserById(1L)).thenReturn(new User());
         when(budgetService.createBudget(any())).thenReturn(budget);
 
         ResponseEntity<Budget> response = controller.createBudget(new Budget());
@@ -68,6 +82,8 @@ class BudgetApiControllerTest {
     @Test
     void updateBudget_ShouldReturnUpdatedBudgetAnd200() {
         Budget budget = new Budget();
+        budget.setUser(currentUser);
+        when(budgetService.getBudgetById(1L)).thenReturn(budget);
         when(budgetService.updateBudget(eq(1L), any())).thenReturn(budget);
 
         ResponseEntity<Budget> response = controller.updateBudget(1L, new Budget());
@@ -78,6 +94,9 @@ class BudgetApiControllerTest {
 
     @Test
     void deleteBudget_ShouldReturn204() {
+        Budget budget = new Budget();
+        budget.setUser(currentUser);
+        when(budgetService.getBudgetById(1L)).thenReturn(budget);
         ResponseEntity<Void> response = controller.deleteBudget(1L);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());

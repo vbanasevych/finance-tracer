@@ -1,9 +1,13 @@
 package com.knu.finance_tracer.api;
 
 import com.knu.finance_tracer.dto.TransactionCreateDto;
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.Transaction;
+import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.TransactionService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -25,9 +29,20 @@ import static org.mockito.Mockito.*;
 class TransactionApiControllerTest {
 
     @Mock private TransactionService transactionService;
+    @Mock private SecurityUtil securityUtil;
 
     @InjectMocks
     private TransactionApiController controller;
+
+    private User currentUser;
+
+    @BeforeEach
+    void setUp() {
+        currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(Role.ROLE_USER);
+        lenient().when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(currentUser);
+    }
 
     @Test
     void getTransactions_ShouldReturnPageAnd200() {
@@ -43,6 +58,7 @@ class TransactionApiControllerTest {
     @Test
     void getTransactionById_ShouldReturnTransactionAnd200() {
         Transaction transaction = new Transaction();
+        transaction.setUser(currentUser);
         when(transactionService.getTransactionById(1L)).thenReturn(transaction);
 
         ResponseEntity<Transaction> response = controller.getTransactionById(1L);
@@ -64,6 +80,9 @@ class TransactionApiControllerTest {
     @Test
     void updateTransaction_ShouldReturn200() {
         TransactionCreateDto dto = new TransactionCreateDto();
+        Transaction transaction = new Transaction();
+        transaction.setUser(currentUser);
+        when(transactionService.getTransactionById(1L)).thenReturn(transaction);
 
         ResponseEntity<Void> response = controller.updateTransaction(1L, dto);
 
@@ -73,6 +92,9 @@ class TransactionApiControllerTest {
 
     @Test
     void deleteTransaction_ShouldReturn204() {
+        Transaction transaction = new Transaction();
+        transaction.setUser(currentUser);
+        when(transactionService.getTransactionById(1L)).thenReturn(transaction);
         ResponseEntity<Void> response = controller.deleteTransaction(1L);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());

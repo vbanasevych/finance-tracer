@@ -67,6 +67,19 @@ class AccountServiceTest {
     }
 
     @Test
+    void getAllAccountsForAdmin_ShouldReturnAllAccounts() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Account> page = new PageImpl<>(List.of(new Account(), new Account()), pageable, 2);
+        when(accountRepository.findAll(pageable)).thenReturn(page);
+
+        Page<Account> result = accountService.getAllAccountsForAdmin(pageable);
+
+        assertSame(page, result);
+        assertEquals(2, result.getContent().size());
+        verify(accountRepository).findAll(pageable);
+    }
+
+    @Test
     void updateAccount_ShouldUpdateFields() {
         Account existing = new Account();
         Account details = new Account();

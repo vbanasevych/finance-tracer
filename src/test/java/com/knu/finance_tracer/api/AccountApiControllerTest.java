@@ -1,10 +1,13 @@
 package com.knu.finance_tracer.api;
 
 import com.knu.finance_tracer.entity.Account;
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.AccountService;
 import com.knu.finance_tracer.service.UserService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,9 +30,20 @@ class AccountApiControllerTest {
 
     @Mock private AccountService accountService;
     @Mock private UserService userService;
+    @Mock private SecurityUtil securityUtil;
 
     @InjectMocks
     private AccountApiController controller;
+
+    private User currentUser;
+
+    @BeforeEach
+    void setUp() {
+        currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(Role.ROLE_USER);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(currentUser);
+    }
 
     @Test
     void getAccounts_ShouldReturnPageAnd200() {
@@ -45,6 +59,7 @@ class AccountApiControllerTest {
     @Test
     void getAccountById_ShouldReturnAccountAnd200() {
         Account account = new Account();
+        account.setUser(currentUser);
         when(accountService.getAccountById(1L)).thenReturn(account);
 
         ResponseEntity<Account> response = controller.getAccountById(1L);
@@ -56,7 +71,6 @@ class AccountApiControllerTest {
     @Test
     void createAccount_ShouldReturnCreatedAccountAnd201() {
         Account account = new Account();
-        when(userService.getUserById(1L)).thenReturn(new User());
         when(accountService.createAccount(any())).thenReturn(account);
 
         ResponseEntity<Account> response = controller.createAccount(new Account());
@@ -68,6 +82,8 @@ class AccountApiControllerTest {
     @Test
     void updateAccount_ShouldReturnUpdatedAccountAnd200() {
         Account account = new Account();
+        account.setUser(currentUser);
+        when(accountService.getAccountById(1L)).thenReturn(account);
         when(accountService.updateAccount(eq(1L), any())).thenReturn(account);
 
         ResponseEntity<Account> response = controller.updateAccount(1L, new Account());
@@ -78,6 +94,9 @@ class AccountApiControllerTest {
 
     @Test
     void deleteAccount_ShouldReturn204() {
+        Account account = new Account();
+        account.setUser(currentUser);
+        when(accountService.getAccountById(1L)).thenReturn(account);
         ResponseEntity<Void> response = controller.deleteAccount(1L);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
