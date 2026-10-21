@@ -72,6 +72,19 @@ class BudgetServiceTest {
     }
 
     @Test
+    void getAllBudgetsForAdmin_ShouldReturnAllBudgets() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Budget> page = new PageImpl<>(List.of(new Budget(), new Budget()), pageable, 2);
+        when(budgetRepository.findAll(pageable)).thenReturn(page);
+
+        Page<Budget> result = budgetService.getAllBudgetsForAdmin(pageable);
+
+        assertSame(page, result);
+        assertEquals(2, result.getContent().size());
+        verify(budgetRepository).findAll(pageable);
+    }
+
+    @Test
     void updateBudget_Success() {
         Budget existing = new Budget();
         Budget details = new Budget();

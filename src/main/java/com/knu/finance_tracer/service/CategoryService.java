@@ -1,6 +1,7 @@
 package com.knu.finance_tracer.service;
 
 import com.knu.finance_tracer.entity.Category;
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.repository.CategoryRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -34,12 +35,12 @@ public class CategoryService {
 
     @Cacheable(value = "categoriesList", key = "#userId")
     public List<Category> getCategoriesByUserId(Long userId) {
-        return categoryRepository.findAllByUserIdAndIsDeletedFalse(userId);
+        return categoryRepository.findAllAvailableForUser(userId, Role.ROLE_ADMIN);
     }
 
     @Cacheable(value = "categoriesPage", key = "#userId + '-' + #pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<Category> getCategories(Long userId, Pageable pageable) {
-        return categoryRepository.findAllByUserIdAndIsDeletedFalse(userId, pageable);
+        return categoryRepository.findAllAvailableForUser(userId, Role.ROLE_ADMIN, pageable);
     }
 
     @CacheEvict(value = {"categoriesPage", "categoriesList", "category"}, allEntries = true)
@@ -57,5 +58,9 @@ public class CategoryService {
         Category category = getCategoryById(id);
         category.setIsDeleted(true);
         categoryRepository.save(category);
+    }
+
+    public Page<Category> getAllCategoriesForAdmin(Pageable pageable) {
+        return categoryRepository.findAll(pageable);
     }
 }

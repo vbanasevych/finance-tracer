@@ -1,7 +1,9 @@
 package com.knu.finance_tracer.service;
 
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.User;
 import com.knu.finance_tracer.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,66 +26,71 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-    @Test
-    void createUser_ShouldReturnSavedUser() {
-        User user = new User();
-        when(userRepository.save(any(User.class))).thenReturn(user);
+    private User user;
 
-        User savedUser = userService.createUser(new User());
-
-        assertNotNull(savedUser);
-        verify(userRepository, times(1)).save(any(User.class));
+    @BeforeEach
+    void setUp() {
+        user = new User();
+        user.setId(1L);
+        user.setEmail("test@example.com");
+        user.setName("Test User");
+        user.setRole(Role.ROLE_USER);
     }
 
     @Test
-    void getUserById_WhenUserExists_ShouldReturnUser() {
-        User user = new User();
+    void createUser_shouldReturnSavedUser() {
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        User created = userService.createUser(user);
+
+        assertNotNull(created);
+        assertEquals("test@example.com", created.getEmail());
+    }
+
+    @Test
+    void getUserById_shouldReturnUser_whenExists() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         User found = userService.getUserById(1L);
 
         assertNotNull(found);
+        assertEquals(1L, found.getId());
     }
 
     @Test
-    void getUserById_WhenUserDoesNotExist_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+    void getUserById_shouldThrowException_whenNotFound() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> userService.getUserById(1L));
+        assertThrows(IllegalArgumentException.class, () -> userService.getUserById(99L));
     }
 
     @Test
-    void getAllUsers_ShouldReturnListOfUsers() {
-        when(userRepository.findAll()).thenReturn(List.of(new User(), new User()));
+    void getAllUsers_shouldReturnList() {
+        when(userRepository.findAll()).thenReturn(List.of(user));
 
         List<User> users = userService.getAllUsers();
 
-        assertEquals(2, users.size());
+        assertFalse(users.isEmpty());
+        assertEquals(1, users.size());
     }
 
     @Test
-    void updateUser_ShouldUpdateAndReturnUser() {
-        User existingUser = new User();
-        existingUser.setId(1L);
+    void updateUserRole_shouldChangeRole() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
 
-        User userDetails = new User();
-        userDetails.setName("New Name");
-        userDetails.setEmail("new@test.com");
+        userService.updateUserRole(1L, Role.ROLE_ADMIN);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(any(User.class))).thenReturn(existingUser);
-
-        User updatedUser = userService.updateUser(1L, userDetails);
-
-        assertEquals("New Name", existingUser.getName());
-        assertEquals("new@test.com", existingUser.getEmail());
-        verify(userRepository, times(1)).save(existingUser);
+        assertEquals(Role.ROLE_ADMIN, user.getRole());
+        verify(userRepository, times(1)).save(user);
     }
 
     @Test
-    void deleteUser_ShouldCallDeleteById() {
+    void deleteUser_shouldInvokeRepositoryDelete() {
         doNothing().when(userRepository).deleteById(1L);
+
         userService.deleteUser(1L);
+
         verify(userRepository, times(1)).deleteById(1L);
     }
 }

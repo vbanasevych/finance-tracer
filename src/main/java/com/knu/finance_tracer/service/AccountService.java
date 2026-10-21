@@ -51,4 +51,8 @@ public class AccountService {
         account.setIsDeleted(true);
         accountRepository.save(account);
     }
+
+    public Page<Account> getAllAccountsForAdmin(Pageable pageable) {
+        return accountRepository.findAll(pageable);
+    }
 }

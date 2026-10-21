@@ -1,10 +1,13 @@
 package com.knu.finance_tracer.api;
 
 import com.knu.finance_tracer.entity.Category;
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.CategoryService;
 import com.knu.finance_tracer.service.UserService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,9 +30,20 @@ class CategoryApiControllerTest {
 
     @Mock private CategoryService categoryService;
     @Mock private UserService userService;
+    @Mock private SecurityUtil securityUtil;
 
     @InjectMocks
     private CategoryApiController controller;
+
+    private User currentUser;
+
+    @BeforeEach
+    void setUp() {
+        currentUser = new User();
+        currentUser.setId(1L);
+        currentUser.setRole(Role.ROLE_USER);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(currentUser);
+    }
 
     @Test
     void getCategories_ShouldReturnPageAnd200() {
@@ -45,6 +59,7 @@ class CategoryApiControllerTest {
     @Test
     void getCategoryById_ShouldReturnCategoryAnd200() {
         Category cat = new Category();
+        cat.setUser(currentUser);
         when(categoryService.getCategoryById(1L)).thenReturn(cat);
 
         ResponseEntity<Category> response = controller.getCategoryById(1L);
@@ -56,7 +71,7 @@ class CategoryApiControllerTest {
     @Test
     void createCategory_ShouldReturnCreatedCategoryAnd201() {
         Category cat = new Category();
-        when(userService.getUserById(1L)).thenReturn(new User());
+        currentUser.setRole(Role.ROLE_ADMIN);
         when(categoryService.createCategory(any())).thenReturn(cat);
 
         ResponseEntity<Category> response = controller.createCategory(new Category());
@@ -68,6 +83,8 @@ class CategoryApiControllerTest {
     @Test
     void updateCategory_ShouldReturnUpdatedCategoryAnd200() {
         Category cat = new Category();
+        cat.setUser(currentUser);
+        when(categoryService.getCategoryById(1L)).thenReturn(cat);
         when(categoryService.updateCategory(eq(1L), any())).thenReturn(cat);
 
         ResponseEntity<Category> response = controller.updateCategory(1L, new Category());
@@ -78,6 +95,9 @@ class CategoryApiControllerTest {
 
     @Test
     void deleteCategory_ShouldReturn204() {
+        Category cat = new Category();
+        cat.setUser(currentUser);
+        when(categoryService.getCategoryById(1L)).thenReturn(cat);
         ResponseEntity<Void> response = controller.deleteCategory(1L);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());

@@ -3,6 +3,7 @@ package com.knu.finance_tracer.api;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -30,5 +31,15 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals("Internal Server Error", response.getBody().get("error"));
         assertEquals("Database down", response.getBody().get("message"));
+    }
+
+    @Test
+    void handleResponseStatusException_ShouldReturnExceptionStatus() {
+        ResponseEntity<Map<String, String>> response = handler.handleResponseStatusException(
+                new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"));
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN.toString(), response.getBody().get("error"));
+        assertEquals("Access denied", response.getBody().get("message"));
     }
 }

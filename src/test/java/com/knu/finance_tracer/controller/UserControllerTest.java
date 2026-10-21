@@ -1,71 +1,78 @@
 package com.knu.finance_tracer.controller;
 
+import com.knu.finance_tracer.entity.Role;
 import com.knu.finance_tracer.entity.User;
+import com.knu.finance_tracer.security.SecurityUtil;
 import com.knu.finance_tracer.service.UserService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.ui.Model;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(UserController.class)
+@Import(ControllerTestConfig.class)
 class UserControllerTest {
 
-    @Mock private UserService userService;
-    @Mock private Model model;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @InjectMocks
-    private UserController userController;
+    @MockitoBean private UserService userService;
+    @MockitoBean private SecurityUtil securityUtil;
+    @MockitoBean private CacheManager cacheManager;
 
     @Test
-    void listUsers_ShouldReturnView() {
-        when(userService.getAllUsers()).thenReturn(List.of(new User()));
-        String view = userController.listUsers(model);
-        assertEquals("users/list", view);
-        verify(model).addAttribute(eq("users"), anyList());
+    @WithMockUser
+    void listUsers_asAdmin() throws Exception {
+        User admin = new User(); admin.setRole(Role.ROLE_ADMIN);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(admin);
+        when(userService.getAllUsers()).thenReturn(List.of(admin));
+
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("users/list"));
     }
 
     @Test
-    void showCreateForm_ShouldReturnView() {
-        String view = userController.showCreateForm(model);
-        assertEquals("users/create", view);
-        verify(model).addAttribute(eq("user"), any(User.class));
+    @WithMockUser
+    void listUsers_asRegularUser_shouldBeForbidden() throws Exception {
+        User regular = new User(); regular.setRole(Role.ROLE_USER);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(regular);
+
+        mockMvc.perform(get("/users"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void createUser_ShouldSaveAndRedirect() {
-        String view = userController.createUser(new User());
-        assertEquals("redirect:/users", view);
-        verify(userService).createUser(any(User.class));
+    @WithMockUser
+    void changeUserRole() throws Exception {
+        User admin = new User(); admin.setRole(Role.ROLE_ADMIN);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(admin);
+
+        mockMvc.perform(post("/users/1/role").with(csrf()).param("role", "ROLE_ADMIN"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/users"));
     }
 
     @Test
-    void showEditForm_ShouldReturnView() {
-        when(userService.getUserById(1L)).thenReturn(new User());
-        String view = userController.showEditForm(1L, model);
-        assertEquals("users/edit", view);
-        verify(model).addAttribute(eq("user"), any(User.class));
-    }
+    @WithMockUser
+    void deleteUser() throws Exception {
+        User admin = new User(); admin.setRole(Role.ROLE_ADMIN);
+        when(securityUtil.getCurrentAuthenticatedUser()).thenReturn(admin);
 
-    @Test
-    void updateUser_ShouldUpdateAndRedirect() {
-        String view = userController.updateUser(1L, new User());
-        assertEquals("redirect:/users", view);
-        verify(userService).updateUser(eq(1L), any(User.class));
-    }
-
-    @Test
-    void deleteUser_ShouldDeleteAndRedirect() {
-        String view = userController.deleteUser(1L);
-        assertEquals("redirect:/users", view);
-        verify(userService).deleteUser(1L);
+        mockMvc.perform(post("/users/delete/1").with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/users"));
     }
 }
