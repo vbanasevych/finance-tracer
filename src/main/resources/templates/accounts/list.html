@@ -32,6 +32,9 @@
                 <li class="nav-item"><a class="nav-link" href="/accounts">Рахунки</a></li>
                 <li class="nav-item"><a class="nav-link" href="/categories">Категорії</a></li>
                 <li class="nav-item"><a class="nav-link" href="/budgets">Бюджети</a></li>
+                <li class="nav-item" sec:authorize="!hasRole('ADMIN')">
+                    <a class="nav-link" href="/analytics">Аналітика</a>
+                </li>
                 <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link text-warning" href="/users">Користувачі (Admin)</a>
                 </li>

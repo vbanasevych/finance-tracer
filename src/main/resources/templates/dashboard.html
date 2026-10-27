@@ -1,0 +1,43 @@
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Витрати за категоріями</h6>
+    </div>
+    <div class="card-body">
+        <canvas id="expensesChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        fetch('/api/analytics/expenses-by-category')
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.categoryName);
+                const amounts = data.map(item => item.totalAmount);
+
+                const ctx = document.getElementById('expensesChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut', // або 'pie'
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Витрати',
+                            data: amounts,
+                            backgroundColor: [
+                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Помилка завантаження даних для графіка:', error));
+    });
+</script>
