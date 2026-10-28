@@ -51,6 +51,8 @@
                           style="font-size: 0.7em;">ADMIN</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                    <li><a class="dropdown-item" href="/profile">Профіль</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li>
                         <form th:action="@{/logout}" method="post" class="m-0">
                             <button type="submit" class="dropdown-item text-danger">Вийти</button>
