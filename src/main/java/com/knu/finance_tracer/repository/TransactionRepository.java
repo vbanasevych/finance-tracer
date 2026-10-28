@@ -22,7 +22,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         FROM Transaction t
         JOIN t.category c
         WHERE t.user.id = :userId 
-          AND t.type = 'EXPENSE'
+          AND c.isExpense = true
         GROUP BY c.name
     """)
     List<CategoryExpenseDto> getExpensesGroupedByCategory(@Param("userId") Long userId);
