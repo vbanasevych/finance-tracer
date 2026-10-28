@@ -19,8 +19,13 @@ public class TelegramWebhookController {
     }
 
     @PostMapping("/webhook")
-    public ResponseEntity<Void> onUpdateReceived(@RequestBody JsonNode update) {
-        telegramBotService.processWebhook(update);
+    public ResponseEntity<Void> handleWebhook(@RequestBody JsonNode update) {
+        System.out.println(">>> OТРИМАНО ВЕБХУК ВІД TELEGRAM: " + update.toString());
+        try {
+            telegramBotService.processWebhook(update);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return ResponseEntity.ok().build();
     }
 }
