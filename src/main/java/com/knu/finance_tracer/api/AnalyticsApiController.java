@@ -7,14 +7,13 @@ import com.knu.finance_tracer.repository.UserRepository;
 import com.knu.finance_tracer.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/analytics")
+@Controller
 public class AnalyticsApiController {
 
     private final TransactionRepository transactionRepository;
@@ -36,12 +35,13 @@ public class AnalyticsApiController {
         return authentication.getName();
     }
 
-    @GetMapping
+    @GetMapping("/analytics")
     public String getAnalyticsPage() {
         return "dashboard";
     }
 
-    @GetMapping("/expenses-by-category")
+    @GetMapping("/api/analytics/expenses-by-category")
+    @ResponseBody
     public List<CategoryExpenseDto> getExpensesByCategory(Authentication authentication) {
         String email = getEmailFromAuth(authentication);
         if (email == null) {
