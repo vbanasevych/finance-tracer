@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/analytics")
+@RequestMapping("/analytics")
 public class AnalyticsApiController {
 
     private final TransactionRepository transactionRepository;
@@ -34,6 +34,11 @@ public class AnalyticsApiController {
             return ((OAuth2User) principal).getAttribute("email");
         }
         return authentication.getName();
+    }
+
+    @GetMapping
+    public String getAnalyticsPage() {
+        return "dashboard";
     }
 
     @GetMapping("/expenses-by-category")
