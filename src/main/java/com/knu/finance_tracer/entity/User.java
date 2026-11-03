@@ -35,6 +35,12 @@ public class User implements Serializable {
     @Column(nullable = false)
     private Role role = Role.ROLE_USER;
 
+    @Column(name = "telegram_chat_id", unique = true)
+    private Long telegramChatId;
+
+    @Column(name = "telegram_verification_token")
+    private String telegramVerificationToken;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Account> accounts = new ArrayList<>();
 }
